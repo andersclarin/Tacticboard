@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Taktiktavla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E3E6DF; --surface:#F6F7F2; --ink:#15233A; --muted:#566173; --line:#C6CBC0;
+  --grassA:#3D7C3F; --grassB:#47894A; --grassOut:#346C36; --chalk:rgba(255,255,255,.9);
+  --focus:#2F6FB3; color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#162029; --surface:#1F2B36; --ink:#ECEFE8; --muted:#9AA6B2; --line:#34424F;
+    --grassA:#30683A; --grassB:#387342; --grassOut:#2A5A31; --focus:#86B6EA; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#162029; --surface:#1F2B36; --ink:#ECEFE8; --muted:#9AA6B2; --line:#34424F;
+  --grassA:#30683A; --grassB:#387342; --grassOut:#2A5A31; --focus:#86B6EA; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%; margin:0; background:var(--bg); color:var(--ink);
+  font-family:Barlow,"Segoe UI",Roboto,system-ui,sans-serif; -webkit-tap-highlight-color:transparent}
+.app{height:100%; display:flex; flex-direction:column; gap:8px; max-width:1400px; margin:0 auto; padding:8px 10px}
+.top,.tools,.timeline{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:700; font-size:26px; line-height:1; margin:0 8px 0 2px}
+.spacer{flex:1}
+.btn{appearance:none; height:38px; padding:0 12px; border-radius:8px; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink); font:500 15px/1 Barlow,"Segoe UI",system-ui,sans-serif;
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap}
+.btn svg{width:18px; height:18px; flex:none}
+.btn[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.btn:disabled{opacity:.45; cursor:default}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface)}
+.seg .btn{border:0; border-radius:0; height:36px}
+.seg .btn + .btn{border-left:1px solid var(--line)}
+select.btn{padding-right:8px}
+.stage{flex:1; min-height:0; position:relative; border-radius:12px; overflow:hidden; background:var(--grassOut)}
+#board{display:block; width:100%; height:100%; touch-action:none; user-select:none; -webkit-user-select:none}
+.ctx{min-height:44px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; color:var(--muted); line-height:1.35}
+.ctx input{height:38px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink);
+  font:500 16px Barlow,system-ui,sans-serif; padding:0 10px; min-width:0}
+.ctx label{display:inline-flex; align-items:center; gap:6px; color:var(--ink)}
+.ctx strong{color:var(--ink); font-weight:600}
+.swatch{width:30px; height:30px; border-radius:50%; border:2px solid var(--line); cursor:pointer; padding:0}
+.swatch[aria-pressed="true"]{border-color:var(--ink); box-shadow:0 0 0 2px var(--surface) inset}
+.play{background:#F2C230; color:#15233A; border-color:#D5A81C; font-weight:600; border-radius:999px; height:42px; padding:0 18px 0 14px}
+.play[aria-pressed="true"]{background:#15233A; color:#F2C230; border-color:#15233A}
+.steps{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.steps .lbl{font-weight:600; margin:0 2px 0 6px}
+.chip{width:38px; padding:0; justify-content:center; font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:700; font-size:19px; position:relative}
+.chip.has::after{content:""; position:absolute; bottom:4px; left:50%; width:5px; height:5px; margin-left:-2.5px; border-radius:50%; background:currentColor; opacity:.55}
+.chip.playing{background:#F2C230; color:#15233A; border-color:#D5A81C}
+.toast{position:absolute; left:50%; bottom:12px; transform:translateX(-50%); background:rgba(14,26,20,.9); color:#fff;
+  padding:9px 14px; border-radius:8px; font-size:14px; max-width:90%; text-align:center; opacity:0; transition:opacity .2s; pointer-events:none}
+.toast.show{opacity:1}
+.sheet{position:fixed; inset:0; background:rgba(10,18,24,.5); display:flex; align-items:flex-end; justify-content:center; z-index:20}
+.sheet[hidden]{display:none}
+.panel{background:var(--surface); color:var(--ink); width:100%; max-width:560px; max-height:85%; overflow:auto;
+  border-radius:14px 14px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){ .sheet{align-items:center} .panel{border-radius:14px} }
+.panel h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-size:24px; margin:0 0 4px}
+.panel h3{font-size:15px; font-weight:600; margin:16px 0 8px; display:flex; align-items:center; gap:8px}
+.dot{width:14px; height:14px; border-radius:50%; display:inline-block}
+.row{display:grid; grid-template-columns:64px 1fr; gap:8px; margin-bottom:6px}
+.row input{height:40px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font:500 16px Barlow,system-ui,sans-serif; padding:0 10px; min-width:0}
+.panel .foot{display:flex; justify-content:flex-end; margin-top:14px}
+@media (max-width:560px){ h1{font-size:22px} .btn{padding:0 10px; font-size:14px} .hide-sm{display:none} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>Taktiktavla</h1>
+    <div class="seg" role="group" aria-label="Spelform">
+      <button class="btn" data-fmt="9">9 mot 9</button>
+      <button class="btn" data-fmt="11">11 mot 11</button>
+    </div>
+    <select class="btn" id="formation" aria-label="Formation"></select>
+    <span class="spacer"></span>
+    <button class="btn" id="oppBtn">Motståndare</button>
+    <button class="btn" id="squadBtn">Namn och nummer</button>
+  </header>
+
+  <nav class="tools" aria-label="Verktyg">
+    <button class="btn" data-tool="move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg>Flytta</button>
+    <button class="btn" data-tool="run"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"><path d="M3 19c5-1 7-8 12-10 2-.8 4-1 6-1"/></svg>Löpning</button>
+    <button class="btn" data-tool="pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18L19 6M19 6h-6M19 6v6"/></svg>Passning</button>
+    <button class="btn" data-tool="zone"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"><rect x="3" y="5" width="18" height="14" rx="2"/></svg>Yta</button>
+    <span class="spacer"></span>
+    <button class="btn" id="undoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg><span class="hide-sm">Ångra</span></button>
+    <button class="btn" id="clearBtn">Rensa</button>
+  </nav>
+
+  <main class="stage" id="stage">
+    <svg id="board" xmlns="http://www.w3.org/2000/svg" aria-label="Fotbollsplan"></svg>
+    <div class="toast" id="toast" role="status"></div>
+  </main>
+
+  <div class="ctx" id="ctx"></div>
+
+  <footer class="timeline">
+    <button class="btn play" id="playBtn"></button>
+    <div class="steps">
+      <span class="lbl">Steg</span>
+      <span id="chips" class="steps"></span>
+      <button class="btn" id="addStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nytt steg</button>
+      <button class="btn" id="delStep" aria-label="Ta bort steget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn" id="speedBtn" aria-label="Hastighet"></button>
+  </footer>
+</div>
+
+<div class="sheet" id="squad" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="squadTitle">
+    <h2 id="squadTitle">Namn och nummer</h2>
+    <div id="squadBody"></div>
+    <div class="foot"><button class="btn" id="squadClose" aria-pressed="true">Klar</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const FORMATS = {
+  '9': { L:64, W:50, pa:[13,30], ga:[4,12], spot:9, circle:7, goal:5,
+    formations:{
+      '3-3-2':[[.035,.5],[.2,.2],[.17,.5],[.2,.8],[.33,.18],[.31,.5],[.33,.82],[.45,.36],[.45,.64]],
+      '3-2-3':[[.035,.5],[.2,.2],[.17,.5],[.2,.8],[.31,.35],[.31,.65],[.44,.15],[.46,.5],[.44,.85]],
+      '4-3-1':[[.035,.5],[.2,.12],[.17,.38],[.17,.62],[.2,.88],[.32,.22],[.3,.5],[.32,.78],[.45,.5]],
+      '2-3-3':[[.035,.5],[.18,.32],[.18,.68],[.3,.15],[.29,.5],[.3,.85],[.44,.2],[.46,.5],[.44,.8]]
+    }},
+  '11': { L:105, W:68, pa:[16.5,40.32], ga:[5.5,18.32], spot:11, circle:9.15, goal:7.32,
+    formations:{
+      '4-3-3':[[.03,.5],[.2,.12],[.17,.37],[.17,.63],[.2,.88],[.31,.28],[.29,.5],[.31,.72],[.44,.15],[.46,.5],[.44,.85]],
+      '4-4-2':[[.03,.5],[.2,.12],[.17,.37],[.17,.63],[.2,.88],[.31,.12],[.29,.38],[.29,.62],[.31,.88],[.44,.38],[.44,.62]],
+      '4-2-3-1':[[.03,.5],[.2,.12],[.17,.37],[.17,.63],[.2,.88],[.27,.38],[.27,.62],[.37,.15],[.37,.5],[.37,.85],[.46,.5]],
+      '3-5-2':[[.03,.5],[.18,.25],[.17,.5],[.18,.75],[.32,.08],[.29,.33],[.27,.5],[.29,.67],[.32,.92],[.44,.38],[.44,.62]]
+    }}
+};
+const HOME='#F2C230', AWAY='#D9483B', INK='#15233A', PASS='#FFE07A';
+const ZONE_COLORS=['#F2C230','#3B8BD4','#E0533F','#FFFFFF'];
+const EMPTY={runs:[],pass:null};
+const KEY='taktiktavla:v1';
+const STEP=1.7, GAP=0.35;
+
+const $=s=>document.querySelector(s);
+const svg=$('#board'), stage=$('#stage');
+let state=load();
+if(!state||!state.boards||!FORMATS[state.format]) state={format:'9',boards:{},speed:1,zoneShape:'rect',zoneColor:0};
+let cur=0, tool='move', sel=null, drag=null, playing=false, done=false, playK=-1, playStart=0, vertical=false, history=[];
+let L1,L2,L3,L4;
+
+function load(){ try{ const s=localStorage.getItem(KEY); return s?JSON.parse(s):null }catch(e){ return null } }
+let saveT; function save(){ clearTimeout(saveT); saveT=setTimeout(()=>{ try{ localStorage.setItem(KEY,JSON.stringify(state)) }catch(e){} },250) }
+const uid=()=>Math.random().toString(36).slice(2,9);
+const F=()=>FORMATS[state.format];
+const R=()=>F().W*0.034;
+function board(){ return state.boards[state.format]||(state.boards[state.format]=newBoard(state.format)); }
+function newBoard(fmt){
+  const f=FORMATS[fmt], name=Object.keys(f.formations)[0], players=[];
+  f.formations[name].forEach(([fx,fy],i)=>players.push({id:'h'+i,team:'home',x:fx*f.L,y:fy*f.W,num:String(i+1),name:''}));
+  f.formations[name].forEach(([fx,fy],i)=>players.push({id:'a'+i,team:'away',x:(1-fx)*f.L,y:(1-fy)*f.W,num:String(i+1),name:''}));
+  return {formation:name, showOpp:true, players, ball:{owner:'h2',x:0,y:0}, zones:[], steps:[{runs:[],pass:null}]};
+}
+function visible(){ const b=board(); return b.players.filter(p=>p.team==='home'||b.showOpp); }
+function player(id){ return board().players.find(p=>p.id===id); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* geometry */
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+const easeIO=t=>-(Math.cos(Math.PI*t)-1)/2;
+const easeOut=t=>1-(1-t)*(1-t);
+function polyLen(p){ let l=0; for(let i=1;i<p.length;i++) l+=dist(p[i-1],p[i]); return l; }
+function along(p,f){
+  const tot=polyLen(p); if(!tot) return {...p[0]};
+  let want=f*tot;
+  for(let i=1;i<p.length;i++){ const d=dist(p[i-1],p[i]); if(want<=d) return lerp(p[i-1],p[i],d?want/d:0); want-=d; }
+  return {...p[p.length-1]};
+}
+function trimEnd(pts,amt){
+  const p=pts.map(q=>({...q}));
+  while(p.length>1){ const a=p[p.length-2], b=p[p.length-1], d=dist(a,b);
+    if(d>amt){ p[p.length-1]=lerp(b,a,amt/d); return p; } amt-=d; p.pop(); }
+  return p;
+}
+const trimStart=(pts,amt)=>trimEnd(pts.slice().reverse(),amt).reverse();
+function smoothD(p){
+  const f=n=>n.toFixed(2);
+  if(p.length<3) return 'M'+p.map(q=>f(q.x)+' '+f(q.y)).join(' L');
+  let d=`M${f(p[0].x)} ${f(p[0].y)}`;
+  for(let i=0;i<p.length-1;i++){
+    const p0=p[i-1]||p[i], p1=p[i], p2=p[i+1], p3=p[i+2]||p2;
+    d+=` C${f(p1.x+(p2.x-p0.x)/6)} ${f(p1.y+(p2.y-p0.y)/6)} ${f(p2.x-(p3.x-p1.x)/6)} ${f(p2.y-(p3.y-p1.y)/6)} ${f(p2.x)} ${f(p2.y)}`;
+  }
+  return d;
+}
+const proj=p=>vertical?{x:p.y,y:F().L-p.x}:{x:p.x,y:p.y};
+const unproj=v=>vertical?{x:F().L-v.y,y:v.x}:{x:v.x,y:v.y};
+function pt(e){ const P=svg.createSVGPoint(); P.x=e.clientX; P.y=e.clientY; return unproj(P.matrixTransform(svg.getScreenCTM().inverse())); }
+
+/* simulation */
+const runPath=(r,start)=>[start,...r.pts.slice(1)];
+function ballHeld(pid,map){ const p=player(pid), q=map[pid], r=R(); const dir=p&&p.team==='away'?-1:1; return {x:q.x+dir*r*1.05,y:q.y+r*0.55}; }
+function positionsAt(b,k){
+  let pos={}; b.players.forEach(p=>pos[p.id]={x:p.x,y:p.y});
+  let ball={...b.ball};
+  for(let i=0;i<k&&i<b.steps.length;i++){
+    const s=b.steps[i], next={};
+    for(const id in pos){ const r=s.runs.find(r=>r.pid===id); next[id]=r?{...r.pts[r.pts.length-1]}:pos[id]; }
+    if(s.pass){ ball = s.pass.to&&player(s.pass.to) ? {owner:s.pass.to,x:0,y:0} : {owner:null,x:s.pass.x,y:s.pass.y}; }
+    pos=next;
+  }
+  return {pos,ball};
+}
+function frame(b,k,t){
+  const {pos,ball}=positionsAt(b,k), s=b.steps[k]||EMPTY, e=easeIO(t);
+  const now={}, end={}, paths={};
+  for(const p of b.players){
+    const r=s.runs.find(r=>r.pid===p.id);
+    if(r){ const path=runPath(r,pos[p.id]); paths[p.id]=path; now[p.id]=along(path,e); end[p.id]=path[path.length-1]; }
+    else { now[p.id]=pos[p.id]; end[p.id]=pos[p.id]; }
+  }
+  const startBall = ball.owner ? ballHeld(ball.owner,pos) : {x:ball.x,y:ball.y};
+  let bp;
+  const tr = s.runs.length ? 0.35 : 0;
+  if(s.pass && t>tr){
+    let release=startBall;
+    if(ball.owner){ const at={}; at[ball.owner]=paths[ball.owner]?along(paths[ball.owner],easeIO(tr)):pos[ball.owner]; release=ballHeld(ball.owner,at); }
+    bp=lerp(release,passTarget(s.pass,end),easeOut((t-tr)/(1-tr)));
+  } else bp = ball.owner ? ballHeld(ball.owner,now) : startBall;
+  return {pos:now,start:pos,end,ballPos:bp,ballStart:startBall,ball,step:s};
+}
+function passTarget(pass,end){ return pass.to&&player(pass.to) ? ballHeld(pass.to,end) : {x:pass.x,y:pass.y}; }
+
+/* pitch */
+function renderPitch(){
+  const f=F(), {L,W}=f, m=W*0.06, lw=W*0.0045, cy=W/2, r=R();
+  const box=stage.getBoundingClientRect();
+  const sh=Math.min(box.width/(L+2*m),box.height/(W+2*m)), sv=Math.min(box.width/(W+2*m),box.height/(L+2*m));
+  vertical = sv>sh;
+  svg.setAttribute('viewBox', vertical?`${-m} ${-m} ${W+2*m} ${L+2*m}`:`${-m} ${-m} ${L+2*m} ${W+2*m}`);
+  let g=`<rect x="${-m}" y="${-m}" width="${L+2*m}" height="${W+2*m}" style="fill:var(--grassOut)"/>`;
+  const n=12, sw=L/n;
+  for(let i=0;i<n;i++) g+=`<rect x="${i*sw}" y="0" width="${sw+0.02}" height="${W}" style="fill:var(${i%2?'--grassB':'--grassA'})"/>`;
+  g+=`<g fill="none" style="stroke:var(--chalk)" stroke-width="${lw}">`;
+  g+=`<rect x="0" y="0" width="${L}" height="${W}"/><line x1="${L/2}" y1="0" x2="${L/2}" y2="${W}"/><circle cx="${L/2}" cy="${cy}" r="${f.circle}"/>`;
+  for(const side of [0,1]){
+    const [pd,pw]=f.pa, [gd,gw]=f.ga;
+    g+=`<rect x="${side?L-pd:0}" y="${cy-pw/2}" width="${pd}" height="${pw}"/>`;
+    g+=`<rect x="${side?L-gd:0}" y="${cy-gw/2}" width="${gd}" height="${gw}"/>`;
+    const dx=pd-f.spot;
+    if(dx<f.circle){ const h=Math.sqrt(f.circle*f.circle-dx*dx), x=side?L-pd:pd;
+      g+=`<path d="M${x} ${cy-h} A${f.circle} ${f.circle} 0 0 ${side?0:1} ${x} ${cy+h}"/>`; }
+    g+=`<rect x="${side?L:-1.5}" y="${cy-f.goal/2}" width="1.5" height="${f.goal}" fill="rgba(255,255,255,.18)"/>`;
+  }
+  for(const [cx,cyy,sx,sy] of [[0,0,1,1],[L,0,-1,1],[0,W,1,-1],[L,W,-1,-1]])
+    g+=`<path d="M${cx} ${cyy+sy} A1 1 0 0 ${sx*sy>0?0:1} ${cx+sx} ${cyy}"/>`;
+  g+=`</g><g style="fill:var(--chalk)">`;
+  for(const x of [L/2,f.spot,L-f.spot]) g+=`<circle cx="${x}" cy="${cy}" r="${lw*1.7}"/>`;
+  g+=`</g>`;
+  svg.innerHTML=`<defs>
+    <marker id="mRun" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#fff"/></marker>
+    <marker id="mPass" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${PASS}"/></marker>
+  </defs>
+  <g transform="${vertical?`translate(0 ${L}) rotate(-90)`:''}">${g}</g>
+  <g id="L1"></g><g id="L2"></g><g id="L3"></g><g id="L4"></g>`;
+  L1=svg.querySelector('#L1'); L2=svg.querySelector('#L2'); L3=svg.querySelector('#L3'); L4=svg.querySelector('#L4');
+}
+
+/* render board */
+function zoneMarkup(z,selected){
+  const c=ZONE_COLORS[z.color]||ZONE_COLORS[0], r=R();
+  const st=`fill="${c}" fill-opacity="${selected?.36:.26}" stroke="${c}" stroke-width="${r*(selected?.16:.1)}" ${selected?'':`stroke-dasharray="${r*.5} ${r*.3}"`} data-kind="zone" data-id="${z.id}" style="cursor:pointer"`;
+  if(z.shape==='free'){ const p=z.pts.map(proj); return `<path d="${smoothD(p)} Z" ${st} stroke-linejoin="round"/>`; }
+  const a=proj(z.pts[0]), b=proj(z.pts[1]);
+  const x=Math.min(a.x,b.x), y=Math.min(a.y,b.y), w=Math.abs(a.x-b.x), h=Math.abs(a.y-b.y);
+  if(z.shape==='ellipse') return `<ellipse cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}" ${st}/>`;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r*.3}" ${st}/>`;
+}
+function render(fr){
+  const b=board(), r=R();
+  let f=fr, mode='edit';
+  if(playing) mode='play'; else if(done){ f=frame(b,b.steps.length,0); mode='done'; }
+  if(!f) f=frame(b,cur,0);
+  const vis=visible(), visIds=new Set(vis.map(p=>p.id));
+
+  L1.innerHTML=b.zones.map(z=>zoneMarkup(z,sel&&sel.kind==='zone'&&sel.id===z.id)).join('');
+
+  let a='';
+  if(mode!=='done'){
+    const s=f.step, op=mode==='play'?.35:1;
+    for(const run of s.runs){
+      if(!visIds.has(run.pid)) continue;
+      const path=trimStart(trimEnd(runPath(run,f.start[run.pid]),r*1.05),r*0.9).map(proj);
+      if(path.length<2) continue;
+      const d=smoothD(path), isSel=sel&&sel.kind==='run'&&sel.id===run.id;
+      if(isSel) a+=`<path d="${d}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="${r*.6}" stroke-linecap="round"/>`;
+      a+=`<path d="${d}" fill="none" stroke="#fff" stroke-width="${r*.2}" stroke-dasharray="${r*.5} ${r*.32}" stroke-linecap="round" marker-end="url(#mRun)" opacity="${op}"/>`;
+      if(mode==='edit'){
+        const e=proj(f.end[run.pid]), pl=player(run.pid);
+        a+=`<circle cx="${e.x}" cy="${e.y}" r="${r*.9}" fill="none" stroke="${pl.team==='home'?HOME:AWAY}" stroke-width="${r*.14}" stroke-dasharray="${r*.35} ${r*.25}"/>`;
+        a+=`<path d="${d}" fill="none" stroke="transparent" stroke-width="${r*1.3}" data-kind="run" data-id="${run.id}" style="pointer-events:stroke;cursor:pointer"/>`;
+      }
+    }
+    if(s.pass){
+      const tgt=passTarget(s.pass,f.end);
+      if(dist(f.ballStart,tgt)>r){
+        const p=trimStart(trimEnd([f.ballStart,tgt],r*.75),r*.5).map(proj), d=smoothD(p), isSel=sel&&sel.kind==='pass';
+        if(isSel) a+=`<path d="${d}" fill="none" stroke="rgba(255,224,122,.35)" stroke-width="${r*.65}" stroke-linecap="round"/>`;
+        a+=`<path d="${d}" fill="none" stroke="${PASS}" stroke-width="${r*.22}" stroke-linecap="round" marker-end="url(#mPass)" opacity="${op}"/>`;
+        if(mode==='edit') a+=`<path d="${d}" fill="none" stroke="transparent" stroke-width="${r*1.3}" data-kind="pass" data-id="${s.pass.id}" style="pointer-events:stroke;cursor:pointer"/>`;
+      }
+    }
+  }
+  L2.innerHTML=a;
+
+  let t='';
+  const font=`font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" text-anchor="middle"`;
+  const order=vis.slice().sort((x,y)=>(sel&&sel.id===x.id)-(sel&&sel.id===y.id));
+  for(const p of order){
+    const v=proj(f.pos[p.id]), home=p.team==='home', isSel=sel&&sel.kind==='player'&&sel.id===p.id;
+    t+=`<g>`;
+    if(isSel) t+=`<circle cx="${v.x}" cy="${v.y}" r="${r*1.38}" fill="none" stroke="#fff" stroke-width="${r*.16}"/>`;
+    t+=`<circle cx="${v.x}" cy="${v.y}" r="${r}" fill="${home?HOME:AWAY}" stroke="rgba(0,0,0,.35)" stroke-width="${r*.08}"/>`;
+    t+=`<text x="${v.x}" y="${v.y+r*.37}" font-size="${r*1.05}" ${font} fill="${home?INK:'#fff'}">${esc(p.num)}</text>`;
+    if(p.name) t+=`<text x="${v.x}" y="${v.y+r*2.05}" font-size="${r*.8}" ${font} font-weight="600" fill="#fff" stroke="rgba(8,28,14,.8)" stroke-width="${r*.24}" paint-order="stroke" stroke-linejoin="round">${esc(p.name.slice(0,14))}</text>`;
+    t+=`</g>`;
+  }
+  const bv=proj(f.ballPos);
+  t+=`<circle cx="${bv.x}" cy="${bv.y}" r="${r*.55}" fill="#fff" stroke="${INK}" stroke-width="${r*.1}"/><circle cx="${bv.x}" cy="${bv.y}" r="${r*.2}" fill="${INK}"/>`;
+  L3.innerHTML=t;
+  renderPreview();
+}
+function renderPreview(){
+  const r=R(); let p='';
+  if(drag&&drag.kind==='run'&&drag.pts.length>1){
+    p=`<path d="${smoothD(drag.pts.map(proj))}" fill="none" stroke="#fff" stroke-width="${r*.2}" stroke-dasharray="${r*.5} ${r*.32}" stroke-linecap="round" marker-end="url(#mRun)"/>`;
+  } else if(drag&&drag.kind==='pass'&&drag.to){
+    p=`<path d="${smoothD([drag.from,drag.to].map(proj))}" fill="none" stroke="${PASS}" stroke-width="${r*.22}" stroke-linecap="round" marker-end="url(#mPass)"/>`;
+  } else if(drag&&drag.kind==='zone'&&drag.pts.length>1){
+    const shape=state.zoneShape;
+    p=zoneMarkup({id:'tmp',shape,color:state.zoneColor,pts:shape==='free'?drag.pts:[drag.pts[0],drag.pts[drag.pts.length-1]]},false).replace('data-kind="zone"','');
+  }
+  L4.innerHTML=p;
+}
+
+/* history */
+function snapshot(){ history.push(JSON.stringify({format:state.format,board:board(),cur})); if(history.length>60) history.shift(); updateUndo(); }
+function undo(){
+  const h=history.pop(); if(!h) return; const o=JSON.parse(h);
+  if(o.format===state.format){ state.boards[state.format]=o.board; cur=Math.min(o.cur,o.board.steps.length-1); }
+  sel=null; done=false; save(); renderAll();
+}
+function updateUndo(){ $('#undoBtn').disabled=!history.length; }
+
+/* pointer */
+function hitPlayer(p,pos,rad,exclude){
+  let best=null,bd=rad;
+  for(const pl of visible()){ if(pl.id===exclude) continue; const d=dist(p,pos[pl.id]); if(d<bd){bd=d;best=pl;} }
+  return best;
+}
+svg.addEventListener('pointerdown',e=>{
+  if(playing) stopPlay();
+  if(done){ done=false; render(); }
+  const p=pt(e), b=board(), f=frame(b,cur,0), r=R();
+  try{ svg.setPointerCapture(e.pointerId) }catch(_){}
+  const target=e.target.closest&&e.target.closest('[data-kind]');
+  if(tool==='move'){
+    if(dist(p,f.ballPos)<r*.85){ drag={kind:'ball',p0:p,moved:false}; return; }
+    const pl=hitPlayer(p,f.pos,r*1.45);
+    if(pl){ drag={kind:'player',id:pl.id,p0:p,moved:false,off:{x:f.pos[pl.id].x-p.x,y:f.pos[pl.id].y-p.y}}; return; }
+    if(target){ sel={kind:target.dataset.kind,id:target.dataset.id}; if(sel.kind==='zone') drag={kind:'zonemove',id:sel.id,last:p,moved:false}; renderAll(); return; }
+    if(sel){ sel=null; renderAll(); }
+    return;
+  }
+  if(tool==='run'){
+    const pl=hitPlayer(p,f.pos,r*1.6);
+    if(!pl){ if(target&&target.dataset.kind==='run'){ sel={kind:'run',id:target.dataset.id}; renderAll(); return; } toast('Starta löpningen på en spelare.'); return; }
+    drag={kind:'run',pid:pl.id,pts:[{...f.pos[pl.id]}]}; return;
+  }
+  if(tool==='pass'){
+    const near=dist(p,f.ballPos)<r*2||(f.ball.owner&&f.pos[f.ball.owner]&&dist(p,f.pos[f.ball.owner])<r*1.6);
+    if(!near){ if(target&&target.dataset.kind==='pass'){ sel={kind:'pass',id:target.dataset.id}; renderAll(); return; } toast('Starta passet vid bollen.'); return; }
+    drag={kind:'pass',from:f.ballStart,to:null,f}; return;
+  }
+  if(tool==='zone'){ drag={kind:'zone',pts:[p]}; }
+});
+svg.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  const p=pt(e), b=board(), r=R(), f=F(), m=f.W*0.05;
+  const clamp=q=>({x:Math.max(-m,Math.min(f.L+m,q.x)),y:Math.max(-m,Math.min(f.W+m,q.y))});
+  if(drag.kind==='player'||drag.kind==='ball'){
+    if(!drag.moved){
+      if(dist(p,drag.p0)<r*.3) return;
+      drag.moved=true;
+      if(cur>0){ drag.blocked=true; toast('Startläget ändras i steg 1. Rita en löpning för att flytta spelaren här.'); return; }
+      snapshot();
+    }
+    if(drag.blocked) return;
+    if(drag.kind==='player'){ const pl=player(drag.id), q=clamp({x:p.x+drag.off.x,y:p.y+drag.off.y}); pl.x=q.x; pl.y=q.y; }
+    else { const q=clamp(p); b.ball={owner:null,x:q.x,y:q.y}; }
+    render(); return;
+  }
+  if(drag.kind==='zonemove'){
+    const z=b.zones.find(z=>z.id===drag.id); if(!z) return;
+    if(!drag.moved){ if(dist(p,drag.last)<r*.3) return; drag.moved=true; snapshot(); }
+    const dx=p.x-drag.last.x, dy=p.y-drag.last.y; z.pts=z.pts.map(q=>({x:q.x+dx,y:q.y+dy})); drag.last=p; render(); return;
+  }
+  if(drag.kind==='run'){ const q=clamp(p); if(dist(q,drag.pts[drag.pts.length-1])>r*.5) drag.pts.push(q); renderPreview(); return; }
+  if(drag.kind==='pass'){ drag.to=clamp(p); renderPreview(); return; }
+  if(drag.kind==='zone'){ const q=clamp(p); if(state.zoneShape==='free'){ if(dist(q,drag.pts[drag.pts.length-1])>r*.4) drag.pts.push(q); } else drag.pts[1]=q; renderPreview(); }
+});
+function endDrag(e){
+  if(!drag) return;
+  const d=drag; drag=null;
+  const b=board(), r=R(), s=b.steps[cur];
+  const p=e?pt(e):null;
+  if(d.kind==='player'&&!d.moved){ sel={kind:'player',id:d.id}; }
+  else if(d.kind==='ball'&&d.moved&&!d.blocked){
+    const pl=hitPlayer(b.ball,Object.fromEntries(b.players.map(q=>[q.id,q])),r*1.7);
+    if(pl) b.ball={owner:pl.id,x:0,y:0};
+  }
+  else if(d.kind==='run'&&p){
+    const last=d.pts[d.pts.length-1]; if(dist(p,last)>r*.15) d.pts.push(p);
+    if(polyLen(d.pts)<r*1.3){ sel={kind:'player',id:d.pid}; }
+    else { snapshot(); s.runs=s.runs.filter(x=>x.pid!==d.pid); s.runs.push({id:uid(),pid:d.pid,pts:d.pts}); sel=null; }
+  }
+  else if(d.kind==='pass'&&d.to){
+    if(dist(d.from,d.to)>r*1.5){
+      const owner=d.f.ball.owner;
+      let best=null,bd=r*1.9;
+      for(const pl of visible()){ if(pl.id===owner) continue;
+        for(const q of [d.f.end[pl.id],d.f.pos[pl.id]]){ const dd=dist(d.to,q); if(dd<bd){bd=dd;best=pl;} } }
+      snapshot();
+      const had=!!s.pass;
+      s.pass=best?{id:uid(),to:best.id}:{id:uid(),to:null,x:d.to.x,y:d.to.y};
+      if(had) toast('Passet ersatte det tidigare passet i steget.');
+    }
+  }
+  else if(d.kind==='zone'&&d.pts.length>1){
+    const pts=state.zoneShape==='free'?d.pts:[d.pts[0],d.pts[d.pts.length-1]];
+    const big=state.zoneShape==='free'?polyLen(pts)>r*4:(Math.abs(pts[0].x-pts[1].x)>r&&Math.abs(pts[0].y-pts[1].y)>r);
+    if(big){ snapshot(); const z={id:uid(),shape:state.zoneShape,color:state.zoneColor,pts}; b.zones.push(z); }
+  }
+  save(); renderAll();
+}
+svg.addEventListener('pointerup',endDrag);
+svg.addEventListener('pointercancel',()=>{ drag=null; render(); });
+
+/* playback */
+function startPlay(){
+  const b=board();
+  if(!b.steps.some(s=>s.runs.length||s.pass)){ toast('Rita en löpning eller ett pass först.'); return; }
+  playing=true; done=false; sel=null; playStart=performance.now(); playK=0;
+  renderAll(); requestAnimationFrame(tick);
+}
+function tick(now){
+  if(!playing) return;
+  const b=board(), el=(now-playStart)/1000*state.speed, per=STEP+GAP, k=Math.floor(el/per);
+  if(k>=b.steps.length){ playing=false; done=true; playK=-1; renderAll(); return; }
+  if(k!==playK){ playK=k; renderTimeline(); }
+  render(frame(b,k,Math.min(1,(el-k*per)/STEP)));
+  requestAnimationFrame(tick);
+}
+function stopPlay(){ playing=false; done=false; playK=-1; renderAll(); }
+
+/* UI */
+function setTool(tl){ tool=tl; if(sel&&tl!=='move'&&sel.kind!=='player') sel=null; renderAll(); }
+function renderTools(){
+  document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tool===tool)));
+  document.querySelectorAll('[data-fmt]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.fmt===state.format)));
+  const b=board(), sel_=$('#formation');
+  sel_.innerHTML=Object.keys(F().formations).map(k=>`<option value="${k}"${k===b.formation?' selected':''}>${k}</option>`).join('');
+  $('#oppBtn').setAttribute('aria-pressed',String(b.showOpp));
+  updateUndo();
+}
+function renderTimeline(){
+  const b=board(), pb=$('#playBtn');
+  pb.setAttribute('aria-pressed',String(playing));
+  pb.innerHTML=playing
+    ?`<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>Stoppa`
+    :`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 001.5.86l12-7.5a1 1 0 000-1.72l-12-7.5A1 1 0 007 4.5z"/></svg>${done?'Spela igen':'Spela'}`;
+  $('#chips').innerHTML=b.steps.map((s,i)=>{
+    const has=s.runs.length||s.pass, active=!playing&&!done&&i===cur, pl=playing&&i===playK;
+    return `<button class="btn chip${has?' has':''}${pl?' playing':''}" data-step="${i}" aria-pressed="${active}" aria-label="Steg ${i+1}">${i+1}</button>`;
+  }).join('');
+  $('#delStep').disabled=b.steps.length<2;
+  $('#speedBtn').textContent=(state.speed===0.5?'0,5':state.speed)+'×';
+}
+function renderCtx(){
+  const c=$('#ctx'), b=board(), s=b.steps[cur];
+  if(playing){ c.innerHTML=`Spelar upp steg för steg. Löpningar är streckade, pass gula.`; return; }
+  if(done){ c.innerHTML=`<span>Slutläge efter steg ${b.steps.length}. Tryck på ett steg för att fortsätta redigera.</span>`; return; }
+  if(sel&&sel.kind==='player'){
+    const p=player(sel.id); if(!p){ sel=null; return renderCtx(); }
+    const run=s.runs.find(r=>r.pid===p.id);
+    c.innerHTML=`<span class="dot" style="background:${p.team==='home'?HOME:AWAY}"></span>
+      <label>Nr <input id="eNum" inputmode="numeric" maxlength="2" style="width:56px" value="${esc(p.num)}"></label>
+      <label>Namn <input id="eName" maxlength="14" style="width:150px" value="${esc(p.name)}" placeholder="Spelarens namn"></label>
+      ${run?`<button class="btn" id="eDelRun">Ta bort löpningen</button>`:''}
+      <button class="btn" id="eDone">Klar</button>`;
+    let snapped=false; const snap=()=>{ if(!snapped){ snapshot(); snapped=true; } };
+    $('#eNum').addEventListener('input',e=>{ snap(); p.num=e.target.value.replace(/[^0-9]/g,'').slice(0,2); save(); render(); });
+    $('#eName').addEventListener('input',e=>{ snap(); p.name=e.target.value; save(); render(); });
+    if(run) $('#eDelRun').onclick=()=>{ snapshot(); s.runs=s.runs.filter(r=>r!==run); save(); renderAll(); };
+    $('#eDone').onclick=()=>{ sel=null; renderAll(); };
+    return;
+  }
+  if(sel&&sel.kind==='zone'){
+    const z=b.zones.find(z=>z.id===sel.id); if(!z){ sel=null; return renderCtx(); }
+    c.innerHTML=`<strong>Yta</strong>${swatches(z.color)}<button class="btn" id="eDel">Ta bort ytan</button><button class="btn" id="eDone">Klar</button>`;
+    c.querySelectorAll('[data-col]').forEach(btn=>btn.onclick=()=>{ snapshot(); z.color=+btn.dataset.col; save(); renderAll(); });
+    $('#eDel').onclick=()=>{ snapshot(); b.zones=b.zones.filter(x=>x!==z); sel=null; save(); renderAll(); };
+    $('#eDone').onclick=()=>{ sel=null; renderAll(); };
+    return;
+  }
+  if(sel&&(sel.kind==='run'||sel.kind==='pass')){
+    let label='';
+    if(sel.kind==='run'){ const r=s.runs.find(r=>r.id===sel.id); if(!r){ sel=null; return renderCtx(); } label=`Löpning för ${who(r.pid)}`; }
+    else { if(!s.pass){ sel=null; return renderCtx(); } label=s.pass.to?`Pass till ${who(s.pass.to)}`:'Pass till yta'; }
+    c.innerHTML=`<strong>${label}</strong><button class="btn" id="eDel">Ta bort</button><button class="btn" id="eDone">Klar</button>`;
+    $('#eDel').onclick=deleteSel; $('#eDone').onclick=()=>{ sel=null; renderAll(); };
+    return;
+  }
+  if(tool==='zone'){
+    const shapes=[['rect','Rektangel'],['ellipse','Ellips'],['free','Frihand']];
+    c.innerHTML=`<div class="seg">${shapes.map(([k,l])=>`<button class="btn" data-shape="${k}" aria-pressed="${state.zoneShape===k}">${l}</button>`).join('')}</div>${swatches(state.zoneColor)}<span>Dra på planen för att rita.</span>`;
+    c.querySelectorAll('[data-shape]').forEach(btn=>btn.onclick=()=>{ state.zoneShape=btn.dataset.shape; save(); renderCtx(); });
+    c.querySelectorAll('[data-col]').forEach(btn=>btn.onclick=()=>{ state.zoneColor=+btn.dataset.col; save(); renderCtx(); });
+    return;
+  }
+  const hints={
+    move: cur===0?'Dra spelare och boll till startläget. Tryck på en spelare för att ge namn och nummer.'
+                 :`Steg ${cur+1} börjar där steg ${cur} slutade. Rita löpningar och pass för det här steget.`,
+    run:`Dra från en spelare dit löpningen ska gå, gärna i en båge. Den hamnar i steg ${cur+1}.`,
+    pass:'Dra från bollen till spelaren som ska få den. Bollen tajmas så att den når fram när löpningen är klar.'
+  };
+  c.innerHTML=`<span>${hints[tool]}</span>`;
+}
+function swatches(active){ return ZONE_COLORS.map((col,i)=>`<button class="swatch" data-col="${i}" aria-label="Färg ${i+1}" aria-pressed="${i===active}" style="background:${col}"></button>`).join(''); }
+function who(id){ const p=player(id); return p?(p.num+(p.name?' '+p.name:'')):''; }
+function deleteSel(){
+  if(!sel) return; const b=board(), s=b.steps[cur]; snapshot();
+  if(sel.kind==='run') s.runs=s.runs.filter(r=>r.id!==sel.id);
+  else if(sel.kind==='pass') s.pass=null;
+  else if(sel.kind==='zone') b.zones=b.zones.filter(z=>z.id!==sel.id);
+  sel=null; save(); renderAll();
+}
+function renderAll(){ render(); renderTools(); renderTimeline(); renderCtx(); }
+
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+
+/* squad sheet */
+function openSquad(){
+  if(playing) stopPlay();
+  const b=board(), body=$('#squadBody');
+  const section=(team,title,col)=>`<h3><span class="dot" style="background:${col}"></span>${title}</h3>`+
+    b.players.filter(p=>p.team===team).map(p=>`<div class="row"><input data-id="${p.id}" data-f="num" inputmode="numeric" maxlength="2" value="${esc(p.num)}" aria-label="Nummer"><input data-id="${p.id}" data-f="name" maxlength="14" value="${esc(p.name)}" placeholder="Namn" aria-label="Namn"></div>`).join('');
+  body.innerHTML=section('home','Mitt lag',HOME)+section('away','Motståndare',AWAY);
+  snapshot();
+  body.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+    const p=player(inp.dataset.id); if(inp.dataset.f==='num'){ inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,2); p.num=inp.value; } else p.name=inp.value;
+    save(); render();
+  }));
+  $('#squad').hidden=false;
+  const first=body.querySelector('input[data-f="name"]'); if(first) first.focus();
+}
+function closeSquad(){ $('#squad').hidden=true; renderAll(); }
+$('#squadBtn').onclick=openSquad;
+$('#squadClose').onclick=closeSquad;
+$('#squad').addEventListener('click',e=>{ if(e.target.id==='squad') closeSquad(); });
+
+/* controls */
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+document.querySelectorAll('[data-fmt]').forEach(b=>b.onclick=()=>{
+  if(state.format===b.dataset.fmt) return;
+  if(playing) stopPlay();
+  state.format=b.dataset.fmt; cur=0; sel=null; done=false; history=[];
+  save(); renderPitch(); renderAll();
+  toast(state.format==='9'?'9 mot 9 – mindre plan och 9 spelare per lag.':'11 mot 11 – fullstor plan och 11 spelare per lag.');
+});
+$('#formation').onchange=e=>{
+  const b=board(), f=F(), pos=f.formations[e.target.value]; snapshot();
+  b.formation=e.target.value;
+  b.players.filter(p=>p.team==='home').forEach((p,i)=>{ p.x=pos[i][0]*f.L; p.y=pos[i][1]*f.W; });
+  if(cur>0) toast('Startläget i steg 1 har ändrats.');
+  save(); renderAll();
+};
+$('#oppBtn').onclick=()=>{ const b=board(); b.showOpp=!b.showOpp; if(sel&&sel.id&&sel.id[0]==='a') sel=null; save(); renderAll(); };
+$('#undoBtn').onclick=undo;
+$('#clearBtn').onclick=()=>{
+  const b=board(); if(!b.zones.length&&!b.steps.some(s=>s.runs.length||s.pass)&&b.steps.length===1){ toast('Det finns inget att rensa.'); return; }
+  if(playing) stopPlay();
+  snapshot(); b.zones=[]; b.steps=[{runs:[],pass:null}]; cur=0; sel=null; done=false; save(); renderAll();
+  toast('Ytor, löpningar och pass är rensade. Tryck Ångra för att få tillbaka dem.');
+};
+$('#playBtn').onclick=()=>playing?stopPlay():startPlay();
+$('#chips').addEventListener('click',e=>{ const c=e.target.closest('[data-step]'); if(!c) return; if(playing) playing=false; done=false; playK=-1; cur=+c.dataset.step; sel=null; renderAll(); });
+$('#addStep').onclick=()=>{ if(playing) playing=false; done=false; snapshot(); const b=board(); b.steps.splice(cur+1,0,{runs:[],pass:null}); cur++; sel=null; if(tool==='move'||tool==='zone') tool='run'; save(); renderAll(); };
+$('#delStep').onclick=()=>{ const b=board(); if(b.steps.length<2) return; snapshot(); b.steps.splice(cur,1); cur=Math.max(0,Math.min(cur,b.steps.length-1)); sel=null; done=false; save(); renderAll(); };
+$('#speedBtn').onclick=()=>{ const sp=[0.5,1,2], i=sp.indexOf(state.speed); state.speed=sp[(i+1)%sp.length]; save(); renderTimeline(); };
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,select,textarea')) return;
+  if((e.key==='Delete'||e.key==='Backspace')&&sel&&sel.kind!=='player'){ e.preventDefault(); deleteSel(); }
+  else if(e.key==='Escape'){ if(!$('#squad').hidden) closeSquad(); else { sel=null; renderAll(); } }
+  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); undo(); }
+  else if(e.key===' '){ e.preventDefault(); playing?stopPlay():startPlay(); }
+});
+
+new ResizeObserver(()=>{ renderPitch(); render(); }).observe(stage);
+cur=Math.min(cur,board().steps.length-1);
+renderPitch(); renderAll();
+})();
+</script>
+</body>
+</html>
