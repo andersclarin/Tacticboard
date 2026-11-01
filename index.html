@@ -101,10 +101,12 @@ body.fs .stage{border-radius:6px}
       <button class="btn ic tool" data-tool="pass" title="Passning" aria-label="Passning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18L19 6M19 6h-6M19 6v6"/></svg><span class="lb">Passning</span></button>
       <button class="btn ic tool" data-tool="zone" title="Yta" aria-label="Yta"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"><rect x="3" y="5" width="18" height="14" rx="2"/></svg><span class="lb">Yta</span></button>
       <button class="btn ic nofs" id="spBtn" title="Fasta situationer" aria-label="Fasta situationer" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4l12 4.5L6 13z" fill="currentColor" fill-opacity=".35"/><path d="M3 21h8"/></svg></button>
+      <button class="btn ic nofs" id="oppBtn" title="Visa motståndare" aria-label="Visa motståndare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><circle cx="17" cy="9" r="2.8"/><path d="M16.5 14.2A5.5 5.5 0 0121.5 20"/></svg></button>
     </div>
     <span class="sep"></span>
     <div class="grp">
       <button class="btn ic" id="undoBtn" title="Ångra" aria-label="Ångra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+      <button class="btn ic" id="resetBtn" title="Sätt alla i startformation" aria-label="Sätt alla i startformation"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="20.5" r="2"/><circle cx="5" cy="15" r="2"/><circle cx="12" cy="15.5" r="2"/><circle cx="19" cy="15" r="2"/><circle cx="7.5" cy="9" r="2"/><circle cx="16.5" cy="9" r="2"/><circle cx="12" cy="3.5" r="2"/></svg></button>
       <button class="btn ic" id="clearBtn" title="Rensa ytor, löpningar och pass" aria-label="Rensa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H9l-5-5a2 2 0 010-2.8L13.2 3a2 2 0 012.8 0l4 4a2 2 0 010 2.8L11 19"/><path d="M8 9l7 7"/></svg></button>
     </div>
     <span class="sep nofs"></span>
@@ -141,8 +143,6 @@ body.fs .stage{border-radius:6px}
     </div>
     <h3>Formation för mitt lag</h3>
     <select class="btn" id="formation" aria-label="Formation"></select>
-    <h3>Motståndare</h3>
-    <button class="btn" id="oppBtn">Visa motståndare</button>
     <div id="squadBody"></div>
     <div class="foot"><button class="btn" id="squadClose" aria-pressed="true">Klar</button></div>
   </div>
@@ -710,6 +710,17 @@ function toggleFs(){
 document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement&&document.body.classList.contains('fs')){ document.body.classList.remove('fs'); updateFsBtn(); } });
 $('#fsBtn').onclick=toggleFs;
 updateFsBtn();
+$('#resetBtn').onclick=()=>{
+  if(playing) stopPlay();
+  const b=board(), f=F(), home=f.formations[b.formation], away=f.formations[Object.keys(f.formations)[0]];
+  snapshot();
+  b.players.forEach(p=>{ const i=+p.id.slice(1);
+    if(p.team==='home'){ p.x=home[i][0]*f.L; p.y=home[i][1]*f.W; }
+    else { p.x=(1-away[i][0])*f.L; p.y=(1-away[i][1])*f.W; } });
+  b.ball={owner:'h2',x:0,y:0}; b.steps=[{runs:[],pass:null}]; cur=0; sel=null; done=false;
+  save(); closeSquad();
+  toast('Alla står i startformation och löpningarna är borttagna. Tryck Ångra för att ångra.');
+};
 $('#oppBtn').onclick=()=>{ const b=board(); b.showOpp=!b.showOpp; if(sel&&sel.id&&sel.id[0]==='a') sel=null; save(); renderAll(); };
 $('#undoBtn').onclick=undo;
 $('#clearBtn').onclick=()=>{
