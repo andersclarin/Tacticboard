@@ -29,114 +29,120 @@
 html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
 body{height:100%; margin:0; background:var(--bg); color:var(--ink);
   font-family:Barlow,"Segoe UI",Roboto,system-ui,sans-serif; -webkit-tap-highlight-color:transparent}
-.app{height:100%; display:flex; flex-direction:column; gap:8px; max-width:1400px; margin:0 auto; padding:8px 10px}
-.top,.tools,.timeline{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:700; font-size:26px; line-height:1; margin:0 8px 0 2px}
+.app{height:100%; display:flex; flex-direction:column; gap:6px; padding:6px 8px}
+.bar{display:flex; flex-wrap:wrap; align-items:center; gap:6px}
+.grp{display:flex; align-items:center; gap:4px; flex-wrap:wrap}
+.sep{width:1px; height:26px; background:var(--line); margin:0 2px}
 .spacer{flex:1}
 .btn{appearance:none; height:38px; padding:0 12px; border-radius:8px; border:1px solid var(--line);
   background:var(--surface); color:var(--ink); font:500 15px/1 Barlow,"Segoe UI",system-ui,sans-serif;
-  display:inline-flex; align-items:center; gap:6px; cursor:pointer; white-space:nowrap}
-.btn svg{width:18px; height:18px; flex:none}
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; white-space:nowrap}
+.btn svg{width:19px; height:19px; flex:none}
+.btn.ic{width:38px; padding:0}
 .btn[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
 .btn:disabled{opacity:.45; cursor:default}
-.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,.menu button:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface)}
 .seg .btn{border:0; border-radius:0; height:36px}
 .seg .btn + .btn{border-left:1px solid var(--line)}
-select.btn{padding-right:8px}
-.stage{flex:1; min-height:0; position:relative; border-radius:12px; overflow:hidden; background:var(--grassOut)}
+.stage{flex:1; min-height:0; position:relative; border-radius:10px; overflow:hidden; background:var(--grassOut)}
 #board{display:block; width:100%; height:100%; touch-action:none; user-select:none; -webkit-user-select:none}
-.ctx{min-height:44px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; color:var(--muted); line-height:1.35}
-.ctx input{height:38px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink);
+.ctx{position:absolute; left:8px; right:8px; bottom:8px; margin:0 auto; width:fit-content; max-width:calc(100% - 16px);
+  background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+  box-shadow:0 6px 22px rgba(0,0,0,.28); display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  font-size:15px; color:var(--muted); line-height:1.35}
+.ctx[hidden]{display:none}
+.ctx input{height:38px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink);
   font:500 16px Barlow,system-ui,sans-serif; padding:0 10px; min-width:0}
 .ctx label{display:inline-flex; align-items:center; gap:6px; color:var(--ink)}
 .ctx strong{color:var(--ink); font-weight:600}
 .swatch{width:30px; height:30px; border-radius:50%; border:2px solid var(--line); cursor:pointer; padding:0}
 .swatch[aria-pressed="true"]{border-color:var(--ink); box-shadow:0 0 0 2px var(--surface) inset}
-.play{background:#F2C230; color:#15233A; border-color:#D5A81C; font-weight:600; border-radius:999px; height:42px; padding:0 18px 0 14px}
+.play{background:#F2C230; color:#15233A; border-color:#D5A81C; font-weight:600; border-radius:999px; padding:0 14px 0 11px}
 .play[aria-pressed="true"]{background:#15233A; color:#F2C230; border-color:#15233A}
-.steps{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
-.steps .lbl{font-weight:600; margin:0 2px 0 6px}
-.chip{width:38px; padding:0; justify-content:center; font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:700; font-size:19px; position:relative}
+.chip{width:34px; padding:0; font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-weight:700; font-size:18px; position:relative}
 .chip.has::after{content:""; position:absolute; bottom:4px; left:50%; width:5px; height:5px; margin-left:-2.5px; border-radius:50%; background:currentColor; opacity:.55}
 .chip.playing{background:#F2C230; color:#15233A; border-color:#D5A81C}
-.toast{position:absolute; left:50%; bottom:12px; transform:translateX(-50%); background:rgba(14,26,20,.9); color:#fff;
-  padding:9px 14px; border-radius:8px; font-size:14px; max-width:90%; text-align:center; opacity:0; transition:opacity .2s; pointer-events:none}
+#chips{display:flex; gap:4px; flex-wrap:wrap}
+.toast{position:absolute; left:50%; top:10px; transform:translateX(-50%); background:rgba(14,26,20,.9); color:#fff;
+  padding:9px 14px; border-radius:8px; font-size:14px; width:max-content; max-width:90%; text-align:center; opacity:0; transition:opacity .2s; pointer-events:none}
 .toast.show{opacity:1}
+.menu{position:fixed; z-index:30; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  box-shadow:0 10px 28px rgba(0,0,0,.25); padding:6px; display:flex; flex-direction:column; min-width:230px}
+.menu[hidden]{display:none}
+.menu button{text-align:left; background:none; border:0; padding:10px 12px; border-radius:6px; font:500 15px Barlow,system-ui,sans-serif; color:var(--ink); cursor:pointer}
+.menu button:hover{background:var(--bg)}
 .sheet{position:fixed; inset:0; background:rgba(10,18,24,.5); display:flex; align-items:flex-end; justify-content:center; z-index:20}
 .sheet[hidden]{display:none}
-.panel{background:var(--surface); color:var(--ink); width:100%; max-width:560px; max-height:85%; overflow:auto;
+.panel{background:var(--surface); color:var(--ink); width:100%; max-width:560px; max-height:88%; overflow:auto;
   border-radius:14px 14px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
 @media (min-width:700px){ .sheet{align-items:center} .panel{border-radius:14px} }
 .panel h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif; font-size:24px; margin:0 0 4px}
-.panel h3{font-size:15px; font-weight:600; margin:16px 0 8px; display:flex; align-items:center; gap:8px}
+.panel h3{font-size:15px; font-weight:600; margin:18px 0 8px; display:flex; align-items:center; gap:8px}
+.panel select.btn{padding-right:8px; min-width:140px}
 .dot{width:14px; height:14px; border-radius:50%; display:inline-block}
 .row{display:grid; grid-template-columns:64px 1fr; gap:8px; margin-bottom:6px}
 .row input{height:40px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font:500 16px Barlow,system-ui,sans-serif; padding:0 10px; min-width:0}
-.panel .foot{display:flex; justify-content:flex-end; margin-top:14px}
-@media (max-width:560px){ h1{font-size:22px} .btn{padding:0 10px; font-size:14px} .hide-sm{display:none} }
-@media (min-width:900px){
-  .app{display:grid; grid-template-columns:260px minmax(0,1fr); grid-template-rows:auto auto auto minmax(0,1fr);
-    grid-template-areas:"top top" "tools tools" "time stage" "ctx stage"; column-gap:14px; row-gap:8px}
-  .top{grid-area:top} .tools{grid-area:tools} .stage{grid-area:stage} .ctx{grid-area:ctx}
-  .timeline{grid-area:time; flex-direction:column; align-items:stretch; gap:10px}
-  .timeline .spacer{display:none}
-  .timeline .play{width:100%; justify-content:center}
-  .timeline .steps .lbl{width:100%; margin:4px 0 0}
-  .timeline #speedBtn{align-self:flex-start}
-  .ctx{align-content:flex-start; align-items:flex-start; border-top:1px solid var(--line); padding-top:12px}
-  .ctx label{width:100%; justify-content:space-between}
-}
+.panel .foot{display:flex; justify-content:flex-end; margin-top:14px; padding-top:8px; position:sticky; bottom:-16px; background:var(--surface)}
+.lb{display:none}
+@media (min-width:1150px){ .btn.tool{width:auto; padding:0 12px} .lb{display:inline} }
+@media (max-width:560px){ .app{padding:4px 6px; gap:4px} .btn{height:36px} .btn.ic{width:36px} .chip{width:32px} .sep{display:none} }
+body.fs .nofs{display:none}
+body.fs .app{padding:4px; gap:4px}
+body.fs .stage{border-radius:6px}
 </style>
 </head>
 <body>
 <div class="app">
-  <header class="top">
-    <h1>Taktiktavla</h1>
+  <header class="bar" aria-label="Verktyg">
+    <div class="grp">
+      <button class="btn ic tool" data-tool="move" title="Flytta" aria-label="Flytta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg><span class="lb">Flytta</span></button>
+      <button class="btn ic tool" data-tool="run" title="Löpning" aria-label="Löpning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"><path d="M3 19c5-1 7-8 12-10 2-.8 4-1 6-1"/></svg><span class="lb">Löpning</span></button>
+      <button class="btn ic tool" data-tool="pass" title="Passning" aria-label="Passning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18L19 6M19 6h-6M19 6v6"/></svg><span class="lb">Passning</span></button>
+      <button class="btn ic tool" data-tool="zone" title="Yta" aria-label="Yta"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"><rect x="3" y="5" width="18" height="14" rx="2"/></svg><span class="lb">Yta</span></button>
+      <button class="btn ic nofs" id="spBtn" title="Fasta situationer" aria-label="Fasta situationer" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4l12 4.5L6 13z" fill="currentColor" fill-opacity=".35"/><path d="M3 21h8"/></svg></button>
+    </div>
+    <span class="sep"></span>
+    <div class="grp">
+      <button class="btn ic" id="undoBtn" title="Ångra" aria-label="Ångra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+      <button class="btn ic" id="clearBtn" title="Rensa ytor, löpningar och pass" aria-label="Rensa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H9l-5-5a2 2 0 010-2.8L13.2 3a2 2 0 012.8 0l4 4a2 2 0 010 2.8L11 19"/><path d="M8 9l7 7"/></svg></button>
+    </div>
+    <span class="sep nofs"></span>
+    <div class="grp nofs">
+      <button class="btn play" id="playBtn"></button>
+      <span id="chips"></span>
+      <button class="btn ic" id="addStep" title="Nytt steg" aria-label="Nytt steg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="btn ic" id="delStep" title="Ta bort steget" aria-label="Ta bort steget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+      <button class="btn" id="speedBtn" title="Hastighet" aria-label="Hastighet"></button>
+    </div>
+    <span class="spacer"></span>
+    <div class="grp">
+      <button class="btn ic nofs" id="squadBtn" title="Inställningar" aria-label="Inställningar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
+      <button class="btn ic" id="fsBtn" title="Helskärm" aria-label="Helskärm"></button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <svg id="board" xmlns="http://www.w3.org/2000/svg" aria-label="Fotbollsplan"></svg>
+    <div class="ctx" id="ctx" hidden></div>
+    <div class="toast" id="toast" role="status"></div>
+  </main>
+</div>
+
+<div class="menu" id="spMenu" role="menu" hidden></div>
+
+<div class="sheet" id="squad" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="squadTitle">
+    <h2 id="squadTitle">Inställningar</h2>
+    <h3>Spelform</h3>
     <div class="seg" role="group" aria-label="Spelform">
       <button class="btn" data-fmt="9">9 mot 9</button>
       <button class="btn" data-fmt="11">11 mot 11</button>
     </div>
+    <h3>Formation för mitt lag</h3>
     <select class="btn" id="formation" aria-label="Formation"></select>
-    <select class="btn" id="setPiece" aria-label="Fasta situationer"></select>
-    <span class="spacer"></span>
-    <button class="btn" id="oppBtn">Motståndare</button>
-    <button class="btn" id="squadBtn">Namn och nummer</button>
-  </header>
-
-  <nav class="tools" aria-label="Verktyg">
-    <button class="btn" data-tool="move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg>Flytta</button>
-    <button class="btn" data-tool="run"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"><path d="M3 19c5-1 7-8 12-10 2-.8 4-1 6-1"/></svg>Löpning</button>
-    <button class="btn" data-tool="pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18L19 6M19 6h-6M19 6v6"/></svg>Passning</button>
-    <button class="btn" data-tool="zone"><svg viewBox="0 0 24 24" fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"><rect x="3" y="5" width="18" height="14" rx="2"/></svg>Yta</button>
-    <span class="spacer"></span>
-    <button class="btn" id="undoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg><span class="hide-sm">Ångra</span></button>
-    <button class="btn" id="clearBtn">Rensa</button>
-  </nav>
-
-  <main class="stage" id="stage">
-    <svg id="board" xmlns="http://www.w3.org/2000/svg" aria-label="Fotbollsplan"></svg>
-    <div class="toast" id="toast" role="status"></div>
-  </main>
-
-  <div class="ctx" id="ctx"></div>
-
-  <footer class="timeline">
-    <button class="btn play" id="playBtn"></button>
-    <div class="steps">
-      <span class="lbl">Steg</span>
-      <span id="chips" class="steps"></span>
-      <button class="btn" id="addStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nytt steg</button>
-      <button class="btn" id="delStep" aria-label="Ta bort steget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
-    </div>
-    <span class="spacer"></span>
-    <button class="btn" id="speedBtn" aria-label="Hastighet"></button>
-  </footer>
-</div>
-
-<div class="sheet" id="squad" hidden>
-  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="squadTitle">
-    <h2 id="squadTitle">Namn och nummer</h2>
+    <h3>Motståndare</h3>
+    <button class="btn" id="oppBtn">Visa motståndare</button>
     <div id="squadBody"></div>
     <div class="foot"><button class="btn" id="squadClose" aria-pressed="true">Klar</button></div>
   </div>
@@ -544,7 +550,7 @@ function tick(now){
 function stopPlay(){ playing=false; done=false; playK=-1; renderAll(); }
 
 /* UI */
-function setTool(tl){ tool=tl; if(sel&&tl!=='move'&&sel.kind!=='player') sel=null; renderAll(); }
+function setTool(tl){ tool=tl; if(sel&&tl!=='move'&&sel.kind!=='player') sel=null; renderAll(); if(tl!=='zone') toast(hint()); }
 function renderTools(){
   document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tool===tool)));
   document.querySelectorAll('[data-fmt]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.fmt===state.format)));
@@ -568,7 +574,8 @@ function renderTimeline(){
 }
 function renderCtx(){
   const c=$('#ctx'), b=board(), s=b.steps[cur];
-  if(playing){ c.innerHTML=`Spelar upp steg för steg. Löpningar är streckade, pass gula.`; return; }
+  c.hidden=false;
+  if(playing){ c.hidden=true; return; }
   if(done){ c.innerHTML=`<span>Slutläge efter steg ${b.steps.length}. Tryck på ett steg för att fortsätta redigera.</span>`; return; }
   if(sel&&sel.kind==='player'){
     const p=player(sel.id); if(!p){ sel=null; return renderCtx(); }
@@ -608,13 +615,16 @@ function renderCtx(){
     c.querySelectorAll('[data-col]').forEach(btn=>btn.onclick=()=>{ state.zoneColor=+btn.dataset.col; save(); renderCtx(); });
     return;
   }
-  const hints={
-    move: cur===0?'Dra spelare och boll till startläget. Tryck på en spelare för att ge namn och nummer.'
-                 :`Steg ${cur+1} börjar där steg ${cur} slutade. Rita löpningar och pass för det här steget.`,
-    run:`Dra från en spelare dit löpningen ska gå, gärna i en båge. Den hamnar i steg ${cur+1}.`,
-    pass:'Dra från bollen till spelaren som ska få den. Bollen tajmas så att den når fram när löpningen är klar.'
-  };
-  c.innerHTML=`<span>${hints[tool]}</span>`;
+  c.hidden=true; c.innerHTML='';
+}
+function hint(){
+  return {
+    move: cur===0?'Dra spelare och boll. Tryck på en spelare för namn och nummer.'
+                 :`Steg ${cur+1} börjar där steg ${cur} slutade.`,
+    run:'Dra från en spelare dit löpningen ska gå.',
+    pass:'Dra från bollen till spelaren som ska få den.',
+    zone:'Dra på planen för att rita en yta.'
+  }[tool];
 }
 function swatches(active){ return ZONE_COLORS.map((col,i)=>`<button class="swatch" data-col="${i}" aria-label="Färg ${i+1}" aria-pressed="${i===active}" style="background:${col}"></button>`).join(''); }
 function who(id){ const p=player(id); return p?(p.num+(p.name?' '+p.name:'')):''; }
@@ -630,21 +640,20 @@ function renderAll(){ render(); renderTools(); renderTimeline(); renderCtx(); }
 let toastT;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
 
-/* squad sheet */
-function openSquad(){
-  if(playing) stopPlay();
+/* settings sheet */
+function buildSquad(){
   const b=board(), body=$('#squadBody');
   const section=(team,title,col)=>`<h3><span class="dot" style="background:${col}"></span>${title}</h3>`+
     b.players.filter(p=>p.team===team).map(p=>`<div class="row"><input data-id="${p.id}" data-f="num" inputmode="numeric" maxlength="2" value="${esc(p.num)}" aria-label="Nummer"><input data-id="${p.id}" data-f="name" maxlength="14" value="${esc(p.name)}" placeholder="Namn" aria-label="Namn"></div>`).join('');
-  body.innerHTML=section('home','Mitt lag',HOME)+section('away','Motståndare',AWAY);
-  snapshot();
+  body.innerHTML=section('home','Namn och nummer, mitt lag',HOME)+section('away','Namn och nummer, motståndare',AWAY);
+  let snapped=false;
   body.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+    if(!snapped){ snapshot(); snapped=true; }
     const p=player(inp.dataset.id); if(inp.dataset.f==='num'){ inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,2); p.num=inp.value; } else p.name=inp.value;
     save(); render();
   }));
-  $('#squad').hidden=false;
-  const first=body.querySelector('input[data-f="name"]'); if(first) first.focus();
 }
+function openSquad(){ if(playing) stopPlay(); closeMenu(); buildSquad(); renderTools(); $('#squad').hidden=false; }
 function closeSquad(){ $('#squad').hidden=true; renderAll(); }
 $('#squadBtn').onclick=openSquad;
 $('#squadClose').onclick=closeSquad;
@@ -657,6 +666,7 @@ document.querySelectorAll('[data-fmt]').forEach(b=>b.onclick=()=>{
   if(playing) stopPlay();
   state.format=b.dataset.fmt; cur=0; sel=null; done=false; history=[];
   save(); renderPitch(); renderAll();
+  if(!$('#squad').hidden) buildSquad();
   toast(state.format==='9'?'9 mot 9 – mindre plan och 9 spelare per lag.':'11 mot 11 – fullstor plan och 11 spelare per lag.');
 });
 $('#formation').onchange=e=>{
@@ -666,8 +676,40 @@ $('#formation').onchange=e=>{
   if(cur>0) toast('Startläget i steg 1 har ändrats.');
   save(); renderAll();
 };
-$('#setPiece').innerHTML='<option value="">Fasta situationer</option>'+Object.entries(SET_PIECES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
-$('#setPiece').onchange=e=>{ const k=e.target.value; e.target.value=''; if(k) applySetPiece(k); };
+const spMenu=$('#spMenu'), spBtn=$('#spBtn');
+spMenu.innerHTML=Object.entries(SET_PIECES).map(([k,v])=>`<button role="menuitem" data-sp="${k}">${v.label}</button>`).join('');
+function closeMenu(){ spMenu.hidden=true; spBtn.setAttribute('aria-expanded','false'); }
+spBtn.onclick=e=>{
+  e.stopPropagation();
+  if(!spMenu.hidden){ closeMenu(); return; }
+  const r=spBtn.getBoundingClientRect();
+  spMenu.hidden=false;
+  spMenu.style.top=(r.bottom+6)+'px';
+  spMenu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-spMenu.offsetWidth-8))+'px';
+  spBtn.setAttribute('aria-expanded','true');
+  spMenu.querySelector('button').focus();
+};
+spMenu.onclick=e=>{ const b=e.target.closest('[data-sp]'); if(!b) return; closeMenu(); applySetPiece(b.dataset.sp); };
+document.addEventListener('pointerdown',e=>{ if(!spMenu.hidden&&!spMenu.contains(e.target)&&e.target.closest('#spBtn')!==spBtn) closeMenu(); });
+
+/* fullscreen */
+const FS_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+const FS_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+function updateFsBtn(){ const on=document.body.classList.contains('fs'); const b=$('#fsBtn'); b.innerHTML=on?FS_OFF:FS_ON; b.title=on?'Lämna helskärm':'Helskärm'; b.setAttribute('aria-label',b.title); }
+function toggleFs(){
+  const on=!document.body.classList.contains('fs');
+  if(on&&playing) stopPlay();
+  closeMenu();
+  document.body.classList.toggle('fs',on);
+  try{
+    if(on&&document.documentElement.requestFullscreen&&!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    else if(!on&&document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  }catch(_){}
+  updateFsBtn();
+}
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement&&document.body.classList.contains('fs')){ document.body.classList.remove('fs'); updateFsBtn(); } });
+$('#fsBtn').onclick=toggleFs;
+updateFsBtn();
 $('#oppBtn').onclick=()=>{ const b=board(); b.showOpp=!b.showOpp; if(sel&&sel.id&&sel.id[0]==='a') sel=null; save(); renderAll(); };
 $('#undoBtn').onclick=undo;
 $('#clearBtn').onclick=()=>{
@@ -684,7 +726,7 @@ $('#speedBtn').onclick=()=>{ const sp=[0.5,1,2], i=sp.indexOf(state.speed); stat
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,select,textarea')) return;
   if((e.key==='Delete'||e.key==='Backspace')&&sel&&sel.kind!=='player'){ e.preventDefault(); deleteSel(); }
-  else if(e.key==='Escape'){ if(!$('#squad').hidden) closeSquad(); else { sel=null; renderAll(); } }
+  else if(e.key==='Escape'){ if(!spMenu.hidden) closeMenu(); else if(!$('#squad').hidden) closeSquad(); else { sel=null; renderAll(); } }
   else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); undo(); }
   else if(e.key===' '){ e.preventDefault(); playing?stopPlay():startPlay(); }
 });
