@@ -45,6 +45,7 @@ body{height:100%; margin:0; background:var(--bg); color:var(--ink);
 .seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface)}
 .seg .btn{border:0; border-radius:0; height:36px}
 .seg .btn + .btn{border-left:1px solid var(--line)}
+.seg[hidden]{display:none}
 .stage{flex:1; min-height:0; position:relative; border-radius:10px; overflow:hidden; background:var(--grassOut)}
 #board{display:block; width:100%; height:100%; touch-action:none; user-select:none; -webkit-user-select:none}
 .ctx{position:absolute; left:8px; right:8px; bottom:8px; margin:0 auto; width:fit-content; max-width:calc(100% - 16px);
@@ -164,6 +165,12 @@ body.fs .stage{border-radius:6px}
     <div class="seg" role="group" aria-label="Spelform">
       <button class="btn" data-fmt="9">9 mot 9</button>
       <button class="btn" data-fmt="11">11 mot 11</button>
+      <button class="btn" id="futsalBtn">Futsal</button>
+    </div>
+    <div class="seg" id="futsalModes" role="group" aria-label="Futsal-läge" style="margin-top:8px" hidden>
+      <button class="btn" data-fmt="futsal">5 mot 5</button>
+      <button class="btn" data-fmt="futsal4">4 mot 4</button>
+      <button class="btn" data-fmt="futsal32">3 mot 2</button>
     </div>
     <h3>Formation för mitt lag</h3>
     <select class="btn" id="formation" aria-label="Formation"></select>
@@ -188,8 +195,31 @@ const FORMATS = {
       '4-4-2':[[.03,.5],[.2,.12],[.17,.37],[.17,.63],[.2,.88],[.31,.12],[.29,.38],[.29,.62],[.31,.88],[.44,.38],[.44,.62]],
       '4-2-3-1':[[.03,.5],[.2,.12],[.17,.37],[.17,.63],[.2,.88],[.27,.38],[.27,.62],[.37,.15],[.37,.5],[.37,.85],[.46,.5]],
       '3-5-2':[[.03,.5],[.18,.25],[.17,.5],[.18,.75],[.32,.08],[.29,.33],[.27,.5],[.29,.67],[.32,.92],[.44,.38],[.44,.62]]
+    }},
+  'futsal': { L:40, W:20, futsal:true, spot:6, spot2:10, circle:3, goal:3, corner:.25,
+    formations:{
+      '1-2-1':[[.04,.5],[.2,.5],[.32,.15],[.32,.85],[.45,.5]],
+      '2-2':[[.04,.5],[.2,.25],[.2,.75],[.4,.25],[.4,.75]],
+      '3-1':[[.04,.5],[.22,.15],[.2,.5],[.22,.85],[.43,.5]],
+      '4-0':[[.04,.5],[.25,.1],[.28,.37],[.28,.63],[.25,.9]]
     }}
 };
+const FMT_LABEL={'9':'9 mot 9','11':'11 mot 11','futsal':'Futsal 5 mot 5','futsal4':'Futsal 4 mot 4','futsal32':'Futsal 3 mot 2'};
+const FMT_TOAST={'9':'9 mot 9: mindre plan och 9 spelare per lag.','11':'11 mot 11: fullstor plan och 11 spelare per lag.',
+  'futsal':'Futsal 5 mot 5: fyra utespelare och målvakt per lag.','futsal4':'Futsal 4 mot 4: tre utespelare och målvakt per lag.',
+  'futsal32':'Futsal 3 mot 2: tre anfallare mot två försvarare och målvakt.'};
+{ const base=FORMATS.futsal, court={L:base.L,W:base.W,futsal:true,spot:base.spot,spot2:base.spot2,circle:base.circle,goal:base.goal,corner:base.corner};
+  FORMATS.futsal4={...court, formations:{
+    '1-2':[[.04,.5],[.22,.5],[.4,.25],[.4,.75]],
+    '2-1':[[.04,.5],[.22,.25],[.22,.75],[.42,.5]],
+    '3-0':[[.04,.5],[.25,.15],[.22,.5],[.25,.85]]}};
+  FORMATS.futsal32={...court, homeGK:false, noSetPieces:true, ballOwner:'h1',
+    away:[[.04,.5],[.25,.3],[.25,.7]],
+    formations:{
+      'Linje':[[.55,.2],[.55,.5],[.55,.8]],
+      'Triangel':[[.5,.2],[.6,.5],[.5,.8]],
+      'Spets':[[.62,.25],[.5,.5],[.62,.75]]}}; }
+const awayForm=f=>f.away||f.formations[Object.keys(f.formations)[0]];
 const HOME='#F2C230', AWAY='#D9483B', INK='#15233A', PASS='#FFE07A';
 const ZONE_COLORS=['#F2C230','#3B8BD4','#E0533F','#FFFFFF'];
 const EMPTY={runs:[],pass:null};
@@ -204,7 +234,7 @@ const SET_PIECES={
   throwR:{label:'Inkast höger',build:throwBuild},
   throwL:{label:'Inkast vänster',build:throwBuild,mirror:true}
 };
-function spH(f){ const s=f.W/68; return {s, r:f.W*0.034, g:(dx,dy)=>({x:f.L-dx*s,y:f.W/2+dy*s}), fr:(fx,dy)=>({x:fx*f.L,y:f.W/2+dy*s})}; }
+function spH(f){ const s=f.W/(f.futsal?40:68); return {s, r:f.W*0.034, g:(dx,dy)=>({x:f.L-dx*s,y:f.W/2+dy*s}), fr:(fx,dy)=>({x:fx*f.L,y:f.W/2+dy*s})}; }
 function cornerBuild(f){
   const {g,fr,r}=spH(f);
   return {
@@ -237,18 +267,21 @@ function throwBuild(f){
 }
 function applySetPiece(key){
   const sp=SET_PIECES[key]; if(!sp) return;
+  if(F().noSetPieces){ toast('Fasta situationer finns inte för 3 mot 2.'); return; }
   if(playing) stopPlay();
   const f=F(), b=board(), d=sp.build(f);
   const m=p=>sp.mirror?{x:p.x,y:f.W-p.y}:{x:p.x,y:p.y};
   snapshot();
-  const n=b.players.filter(p=>p.team==='home').length;
-  for(let i=0;i<n;i++){ Object.assign(player('h'+i),m(d.home[i])); Object.assign(player('a'+i),m(d.away[i])); }
+  const n=b.players.filter(p=>p.team==='home').length, na=b.players.filter(p=>p.team==='away').length;
+  for(let i=0;i<n;i++) Object.assign(player('h'+i),m(d.home[i]));
+  for(let i=0;i<na;i++) Object.assign(player('a'+i),m(d.away[i]));
   b.ball={owner:null,...m(d.ball)};
-  b.steps=d.steps.map(s=>({runs:s.runs.map(([i,pts])=>({id:uid(),pid:'h'+i,pts:[m(pts[0]),...pts.map(m)]})),pass:s.pass==null?null:{id:uid(),to:'h'+s.pass}}));
+  b.steps=d.steps.map(s=>({runs:s.runs.filter(([i])=>i<n).map(([i,pts])=>({id:uid(),pid:'h'+i,pts:[m(pts[0]),...pts.map(m)]})),pass:s.pass==null||s.pass>=n?null:{id:uid(),to:'h'+s.pass}}))
+    .filter((s,i)=>i===0||s.runs.length||s.pass);
   b.zones=(d.zones||[]).map(z=>({id:uid(),shape:z.shape,color:z.color,pts:z.pts.map(m)}));
   b.showOpp=true; cur=0; sel=null; done=false; tool='move';
   save(); renderAll();
-  toast(sp.label+' är inlagd. Tryck Spela för att se varianten.');
+  toast(spLabel(sp)+' är inlagd. Tryck Spela för att se varianten.');
 }
 
 const $=s=>document.querySelector(s);
@@ -267,12 +300,12 @@ function board(){ return state.boards[state.format]||(state.boards[state.format]
 function newBoard(fmt){
   const f=FORMATS[fmt], name=Object.keys(f.formations)[0], players=[];
   f.formations[name].forEach(([fx,fy],i)=>players.push({id:'h'+i,team:'home',x:fx*f.L,y:fy*f.W,num:String(i+1),name:''}));
-  f.formations[name].forEach(([fx,fy],i)=>players.push({id:'a'+i,team:'away',x:(1-fx)*f.L,y:(1-fy)*f.W,num:String(i+1),name:''}));
-  return {formation:name, showOpp:true, players, ball:{owner:'h2',x:0,y:0}, zones:[], steps:[{runs:[],pass:null}]};
+  awayForm(f).forEach(([fx,fy],i)=>players.push({id:'a'+i,team:'away',x:(1-fx)*f.L,y:(1-fy)*f.W,num:String(i+1),name:''}));
+  return {formation:name, showOpp:true, players, ball:{owner:f.ballOwner||'h2',x:0,y:0}, zones:[], steps:[{runs:[],pass:null}]};
 }
 function visible(){ const b=board(); return b.players.filter(p=>p.team==='home'||b.showOpp); }
 function player(id){ return board().players.find(p=>p.id===id); }
-const isGK=p=>p.id==='h0'||p.id==='a0';
+const isGK=p=>p.id==='a0'||(p.id==='h0'&&F().homeGK!==false);
 const pColor=p=>isGK(p)?(p.team==='home'?'#5EC8F2':'#7E5BD6'):(p.team==='home'?HOME:AWAY);
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -352,10 +385,19 @@ function renderPitch(){
   svg.setAttribute('viewBox', vertical?`${-m} ${-m} ${W+2*m} ${L+2*m}`:`${-m} ${-m} ${L+2*m} ${W+2*m}`);
   let g=`<rect x="${-m}" y="${-m}" width="${L+2*m}" height="${W+2*m}" style="fill:var(--grassOut)"/>`;
   const n=12, sw=L/n;
-  for(let i=0;i<n;i++) g+=`<rect x="${i*sw}" y="0" width="${sw+0.02}" height="${W}" style="fill:var(${i%2?'--grassB':'--grassA'})"/>`;
+  const court=f.futsal, fillA=court?'fill:#2F6BA3':`fill:var(--grassA)`, fillB=court?'fill:#3573AC':`fill:var(--grassB)`;
+  stage.style.background=court?'#8F6442':'';
+  if(court) g=`<rect x="${-m}" y="${-m}" width="${L+2*m}" height="${W+2*m}" style="fill:#8F6442"/>`;
+  for(let i=0;i<n;i++) g+=`<rect x="${i*sw}" y="0" width="${sw+0.02}" height="${W}" style="${i%2?fillB:fillA}"/>`;
   g+=`<g fill="none" style="stroke:var(--chalk)" stroke-width="${lw}">`;
   g+=`<rect x="0" y="0" width="${L}" height="${W}"/><line x1="${L/2}" y1="0" x2="${L/2}" y2="${W}"/><circle cx="${L/2}" cy="${cy}" r="${f.circle}"/>`;
   for(const side of [0,1]){
+    if(court){
+      const X=v=>side?L-v:v, sw1=side?0:1, h=1.58;
+      g+=`<path d="M${X(0)} ${cy-h-6} A6 6 0 0 ${sw1} ${X(6)} ${cy-h} L${X(6)} ${cy+h} A6 6 0 0 ${sw1} ${X(0)} ${cy+h+6}"/>`;
+      g+=`<rect x="${side?L:-1}" y="${cy-f.goal/2}" width="1" height="${f.goal}" fill="rgba(255,255,255,.18)"/>`;
+      continue;
+    }
     const [pd,pw]=f.pa, [gd,gw]=f.ga;
     g+=`<rect x="${side?L-pd:0}" y="${cy-pw/2}" width="${pd}" height="${pw}"/>`;
     g+=`<rect x="${side?L-gd:0}" y="${cy-gw/2}" width="${gd}" height="${gw}"/>`;
@@ -364,10 +406,11 @@ function renderPitch(){
       g+=`<path d="M${x} ${cy-h} A${f.circle} ${f.circle} 0 0 ${side?0:1} ${x} ${cy+h}"/>`; }
     g+=`<rect x="${side?L:-1.5}" y="${cy-f.goal/2}" width="1.5" height="${f.goal}" fill="rgba(255,255,255,.18)"/>`;
   }
+  const cr=f.corner||1;
   for(const [cx,cyy,sx,sy] of [[0,0,1,1],[L,0,-1,1],[0,W,1,-1],[L,W,-1,-1]])
-    g+=`<path d="M${cx} ${cyy+sy} A1 1 0 0 ${sx*sy>0?0:1} ${cx+sx} ${cyy}"/>`;
+    g+=`<path d="M${cx} ${cyy+sy*cr} A${cr} ${cr} 0 0 ${sx*sy>0?0:1} ${cx+sx*cr} ${cyy}"/>`;
   g+=`</g><g style="fill:var(--chalk)">`;
-  for(const x of [L/2,f.spot,L-f.spot]) g+=`<circle cx="${x}" cy="${cy}" r="${lw*1.7}"/>`;
+  for(const x of [L/2,f.spot,L-f.spot].concat(f.spot2?[f.spot2,L-f.spot2]:[])) g+=`<circle cx="${x}" cy="${cy}" r="${lw*1.7}"/>`;
   g+=`</g>`;
   svg.innerHTML=`<defs>
     <marker id="mRun" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#fff"/></marker>
@@ -584,6 +627,9 @@ function setTool(tl){ tool=tl; if(sel&&tl!=='move'&&sel.kind!=='player') sel=nul
 function renderTools(){
   document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tool===tool)));
   document.querySelectorAll('[data-fmt]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.fmt===state.format)));
+  const isF=!!F().futsal;
+  $('#futsalBtn').setAttribute('aria-pressed',String(isF));
+  $('#futsalModes').hidden=!isF;
   const b=board(), sel_=$('#formation');
   sel_.innerHTML=Object.keys(F().formations).map(k=>`<option value="${k}"${k===b.formation?' selected':''}>${k}</option>`).join('');
   $('#oppBtn').setAttribute('aria-pressed',String(b.showOpp));
@@ -691,14 +737,18 @@ $('#squad').addEventListener('click',e=>{ if(e.target.id==='squad') closeSquad()
 
 /* controls */
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
-document.querySelectorAll('[data-fmt]').forEach(b=>b.onclick=()=>{
-  if(state.format===b.dataset.fmt) return;
+function switchFormat(fmt){
+  if(!FORMATS[fmt]||state.format===fmt) return;
   if(playing) stopPlay();
-  state.format=b.dataset.fmt; cur=0; sel=null; done=false; history=[];
+  state.format=fmt; if(FORMATS[fmt].futsal) state.lastFutsal=fmt;
+  cur=0; sel=null; done=false; history=[];
   save(); renderPitch(); renderAll();
   if(!$('#squad').hidden) buildSquad();
-  toast(state.format==='9'?'9 mot 9 – mindre plan och 9 spelare per lag.':'11 mot 11 – fullstor plan och 11 spelare per lag.');
-});
+  toast(FMT_TOAST[fmt]);
+  buildSpMenu();
+}
+document.querySelectorAll('[data-fmt]').forEach(b=>b.onclick=()=>switchFormat(b.dataset.fmt));
+$('#futsalBtn').onclick=()=>{ if(!F().futsal) switchFormat(state.lastFutsal||'futsal'); };
 $('#formation').onchange=e=>{
   const b=board(), f=F(), pos=f.formations[e.target.value]; snapshot();
   b.formation=e.target.value;
@@ -707,7 +757,9 @@ $('#formation').onchange=e=>{
   save(); renderAll();
 };
 const spMenu=$('#spMenu'), spBtn=$('#spBtn');
-spMenu.innerHTML=Object.entries(SET_PIECES).map(([k,v])=>`<button role="menuitem" data-sp="${k}">${v.label}</button>`).join('');
+function spLabel(v){ return F().futsal?v.label.replace('Inkast','Inspark'):v.label; }
+function buildSpMenu(){ spMenu.innerHTML=Object.entries(SET_PIECES).map(([k,v])=>`<button role="menuitem" data-sp="${k}">${spLabel(v)}</button>`).join(''); }
+buildSpMenu();
 function closeMenu(){ spMenu.hidden=true; spBtn.setAttribute('aria-expanded','false'); }
 spBtn.onclick=e=>{
   e.stopPropagation();
@@ -729,7 +781,7 @@ function libMsg(m){ $('#libMsg').textContent=m; }
 function renderLib(){
   const list=$('#libList'), items=libItems();
   if(!items.length){ list.innerHTML='<p class="muted">Inga sparade taktiker än. Bygg upp ett förlopp och spara det ovan.</p>'; return; }
-  list.innerHTML=items.map(it=>`<div class="item"><div class="meta"><div class="nm">${esc(it.name)}</div><div class="sub">${it.format} mot ${it.format}, ${it.board.steps.length} steg, ${new Date(it.date).toLocaleDateString('sv-SE')}</div></div>
+  list.innerHTML=items.map(it=>`<div class="item"><div class="meta"><div class="nm">${esc(it.name)}</div><div class="sub">${FMT_LABEL[it.format]||it.format}, ${it.board.steps.length} steg, ${new Date(it.date).toLocaleDateString('sv-SE')}</div></div>
     <button class="btn ic play" data-lplay="${it.id}" title="Spela upp" aria-label="Spela upp ${esc(it.name)}">${PLAY_SVG}</button>
     <button class="btn" data-lopen="${it.id}">Öppna</button>
     <button class="btn" data-ldel="${it.id}" aria-label="Ta bort ${esc(it.name)}">Ta bort</button></div>`).join('');
@@ -789,7 +841,7 @@ $('#libFile').onchange=async e=>{
     const items=libItems(); let n=0;
     for(const it of arr){
       if(!it||!FORMATS[it.format]||!it.board||!Array.isArray(it.board.players)||!Array.isArray(it.board.steps)) continue;
-      if(it.board.players.length!==FORMATS[it.format].formations[Object.keys(FORMATS[it.format].formations)[0]].length*2) continue;
+      { const ff=FORMATS[it.format]; if(it.board.players.length!==ff.formations[Object.keys(ff.formations)[0]].length+awayForm(ff).length) continue; }
       const name=String(it.name||'Importerad taktik').slice(0,40), ex=items.find(x=>x.name.toLowerCase()===name.toLowerCase());
       const entry={id:ex?ex.id:uid(), name, format:it.format, date:it.date||Date.now(), board:normBoard(it.board)};
       if(ex) Object.assign(ex,entry); else items.push(entry); n++;
@@ -819,7 +871,7 @@ $('#fsBtn').onclick=toggleFs;
 updateFsBtn();
 $('#resetBtn').onclick=()=>{
   if(playing) stopPlay();
-  const b=board(), f=F(), home=f.formations[b.formation], away=f.formations[Object.keys(f.formations)[0]];
+  const b=board(), f=F(), home=f.formations[b.formation], away=awayForm(f);
   snapshot();
   b.players.forEach(p=>{ const i=+p.id.slice(1);
     if(p.team==='home'){ p.x=home[i][0]*f.L; p.y=home[i][1]*f.W; }

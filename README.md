@@ -4,8 +4,8 @@ En digital taktiktavla för att planera och visa spelidéer. Den fungerar i webb
 
 ## Funktioner
 
-- **9 mot 9 och 11 mot 11.** Planens storlek, linjer och antal spelare anpassas efter spelformen.
-- **Formationer.** 3-3-2, 3-2-3, 4-3-1 och 2-3-3 för 9 mot 9, samt 4-3-3, 4-4-2, 4-2-3-1 och 3-5-2 för 11 mot 11.
+- **9 mot 9, 11 mot 11 och futsal.** Planens storlek, linjer och antal spelare anpassas efter spelformen. Futsal spelas på en inomhusplan på 40 × 20 meter i tre lägen: 5 mot 5 och 4 mot 4 med målvakt i båda lagen, samt 3 mot 2 där tre anfallare möter två försvarare och en målvakt.
+- **Formationer.** 3-3-2, 3-2-3, 4-3-1 och 2-3-3 för 9 mot 9, 4-3-3, 4-4-2, 4-2-3-1 och 3-5-2 för 11 mot 11, samt 1-2-1, 2-2, 3-1 och 4-0 för futsal 5 mot 5, 1-2, 2-1 och 3-0 för 4 mot 4 och linje, triangel och spets för 3 mot 2.
 - **Namn och nummer.** Ge varje spelare namn och tröjnummer, både i det egna laget och hos motståndarna.
 - **Tydliga målvakter.** Målvakterna har en egen färg och är märkta MV, ljusblå i det egna laget och lila hos motståndarna.
 - **Visa eller dölj motståndare.** Ta bort motståndarna från planen med ett tryck när du bara vill visa ditt eget lag.
@@ -13,7 +13,7 @@ En digital taktiktavla för att planera och visa spelidéer. Den fungerar i webb
 - **Passningar.** Dra från bollen till en spelare. Passet tajmas så att bollen når fram precis när löpningen är klar.
 - **Steg och uppspelning.** Bygg upp ett anfall i flera steg och spela upp hela förloppet i 0,5×, 1× eller 2× hastighet.
 - **Ytor.** Markera ytor med rektanglar, ellipser eller frihand i fyra färger.
-- **Fasta situationer.** Färdiga upplägg för hörnor, inkast och frisparkar utanför straffområdet, med exempel på löpningar.
+- **Fasta situationer.** Färdiga upplägg för hörnor, inkast och frisparkar utanför straffområdet, med exempel på löpningar. I futsal heter inkasten inspark. I 3 mot 2 finns inga fasta situationer.
 - **Startformation.** Ställ tillbaka alla spelare i formationen med ett tryck.
 - **Sparade taktiker.** Spara upplägg med ett namn, öppna dem igen och spela upp dem direkt.
 - **Export och import.** Flytta sparade taktiker till en annan enhet eller dela dem med andra tränare via en fil.
