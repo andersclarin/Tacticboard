@@ -170,7 +170,7 @@ body.fs .stage{border-radius:6px}
     <div class="seg" id="futsalModes" role="group" aria-label="Futsal-läge" style="margin-top:8px" hidden>
       <button class="btn" data-fmt="futsal">5 mot 5</button>
       <button class="btn" data-fmt="futsal4">4 mot 4</button>
-      <button class="btn" data-fmt="futsal32">3 mot 2</button>
+      <button class="btn" data-fmt="futsal3">3 mot 3</button>
     </div>
     <h3>Formation för mitt lag</h3>
     <select class="btn" id="formation" aria-label="Formation"></select>
@@ -204,21 +204,19 @@ const FORMATS = {
       '4-0':[[.04,.5],[.25,.1],[.28,.37],[.28,.63],[.25,.9]]
     }}
 };
-const FMT_LABEL={'9':'9 mot 9','11':'11 mot 11','futsal':'Futsal 5 mot 5','futsal4':'Futsal 4 mot 4','futsal32':'Futsal 3 mot 2'};
+const FMT_LABEL={'9':'9 mot 9','11':'11 mot 11','futsal':'Futsal 5 mot 5','futsal4':'Futsal 4 mot 4','futsal3':'Futsal 3 mot 3'};
 const FMT_TOAST={'9':'9 mot 9: mindre plan och 9 spelare per lag.','11':'11 mot 11: fullstor plan och 11 spelare per lag.',
   'futsal':'Futsal 5 mot 5: fyra utespelare och målvakt per lag.','futsal4':'Futsal 4 mot 4: tre utespelare och målvakt per lag.',
-  'futsal32':'Futsal 3 mot 2: tre anfallare mot två försvarare och målvakt.'};
+  'futsal3':'Futsal 3 mot 3: två utespelare och målvakt per lag.'};
 { const base=FORMATS.futsal, court={L:base.L,W:base.W,futsal:true,spot:base.spot,spot2:base.spot2,circle:base.circle,goal:base.goal,corner:base.corner};
   FORMATS.futsal4={...court, formations:{
     '1-2':[[.04,.5],[.22,.5],[.4,.25],[.4,.75]],
     '2-1':[[.04,.5],[.22,.25],[.22,.75],[.42,.5]],
     '3-0':[[.04,.5],[.25,.15],[.22,.5],[.25,.85]]}};
-  FORMATS.futsal32={...court, homeGK:false, noSetPieces:true, ballOwner:'h1',
-    away:[[.04,.5],[.25,.3],[.25,.7]],
-    formations:{
-      'Linje':[[.55,.2],[.55,.5],[.55,.8]],
-      'Triangel':[[.5,.2],[.6,.5],[.5,.8]],
-      'Spets':[[.62,.25],[.5,.5],[.62,.75]]}}; }
+  FORMATS.futsal3={...court, formations:{
+    '1-1':[[.04,.5],[.22,.5],[.4,.5]],
+    '2-0':[[.04,.5],[.28,.25],[.28,.75]],
+    'Snett':[[.04,.5],[.22,.3],[.4,.7]]}}; }
 const awayForm=f=>f.away||f.formations[Object.keys(f.formations)[0]];
 const HOME='#F2C230', AWAY='#D9483B', INK='#15233A', PASS='#FFE07A';
 const ZONE_COLORS=['#F2C230','#3B8BD4','#E0533F','#FFFFFF'];
@@ -287,6 +285,7 @@ function applySetPiece(key){
 const $=s=>document.querySelector(s);
 const svg=$('#board'), stage=$('#stage');
 let state=load();
+if(state&&state.boards){ delete state.boards.futsal32; if(state.format==='futsal32') state.format='futsal3'; if(state.lastFutsal==='futsal32') state.lastFutsal='futsal3'; if(state.saved) state.saved=state.saved.filter(x=>x.format!=='futsal32'); }
 if(!state||!state.boards||!FORMATS[state.format]) state={format:'9',boards:{},speed:1,zoneShape:'rect',zoneColor:0};
 let cur=0, tool='move', sel=null, drag=null, playing=false, done=false, playK=-1, playStart=0, vertical=false, history=[];
 let L1,L2,L3,L4;
