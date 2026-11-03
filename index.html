@@ -48,6 +48,7 @@ body{height:100%; margin:0; background:var(--bg); color:var(--ink);
 .seg[hidden]{display:none}
 .stage{flex:1; min-height:0; position:relative; border-radius:10px; overflow:hidden; background:var(--grassOut)}
 #board{display:block; width:100%; height:100%; touch-action:none; user-select:none; -webkit-user-select:none}
+#board .lines *{vector-effect:non-scaling-stroke}
 .ctx{position:absolute; left:8px; right:8px; bottom:8px; margin:0 auto; width:fit-content; max-width:calc(100% - 16px);
   background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
   box-shadow:0 6px 22px rgba(0,0,0,.28); display:flex; flex-wrap:wrap; gap:8px; align-items:center;
@@ -337,8 +338,9 @@ function smoothD(p){
   }
   return d;
 }
-const proj=p=>vertical?{x:p.y,y:F().L-p.x}:{x:p.x,y:p.y};
-const unproj=v=>vertical?{x:F().L-v.y,y:v.x}:{x:v.x,y:v.y};
+let ax=1, ay=1;
+const proj=p=>vertical?{x:p.y*ay,y:(F().L-p.x)*ax}:{x:p.x*ax,y:p.y*ay};
+const unproj=v=>vertical?{x:F().L-v.y/ax,y:v.x/ay}:{x:v.x/ax,y:v.y/ay};
 function pt(e){ const P=svg.createSVGPoint(); P.x=e.clientX; P.y=e.clientY; return unproj(P.matrixTransform(svg.getScreenCTM().inverse())); }
 
 /* simulation */
@@ -381,14 +383,25 @@ function renderPitch(){
   const box=stage.getBoundingClientRect();
   const sh=Math.min(box.width/(L+2*m),box.height/(W+2*m)), sv=Math.min(box.width/(W+2*m),box.height/(L+2*m));
   vertical = sv>sh;
-  svg.setAttribute('viewBox', vertical?`${-m} ${-m} ${W+2*m} ${L+2*m}`:`${-m} ${-m} ${L+2*m} ${W+2*m}`);
+  // sträck planen så att den fyller hela ytan
+  const target=box.width/Math.max(1,box.height), CAP=1.8;
+  ax=1; ay=1;
+  if(!vertical){
+    if(target>(L+2*m)/(W+2*m)) ax=Math.min(CAP,(target*(W+2*m)-2*m)/L); else ay=Math.min(CAP,((L+2*m)/target-2*m)/W);
+  } else {
+    if(target>(W+2*m)/(L+2*m)) ay=Math.min(CAP,(target*(L+2*m)-2*m)/W); else ax=Math.min(CAP,((W+2*m)/target-2*m)/L);
+  }
+  ax=Math.max(1,ax); ay=Math.max(1,ay);
+  const vbW=vertical?W*ay+2*m:L*ax+2*m, vbH=vertical?L*ax+2*m:W*ay+2*m;
+  svg.setAttribute('viewBox', `${-m} ${-m} ${vbW} ${vbH}`);
+  const lwPx=lw*Math.min(box.width/vbW,box.height/vbH);
   let g=`<rect x="${-m}" y="${-m}" width="${L+2*m}" height="${W+2*m}" style="fill:var(--grassOut)"/>`;
   const n=12, sw=L/n;
   const court=f.futsal, fillA=court?'fill:#2F6BA3':`fill:var(--grassA)`, fillB=court?'fill:#3573AC':`fill:var(--grassB)`;
   stage.style.background=court?'#8F6442':'';
   if(court) g=`<rect x="${-m}" y="${-m}" width="${L+2*m}" height="${W+2*m}" style="fill:#8F6442"/>`;
   for(let i=0;i<n;i++) g+=`<rect x="${i*sw}" y="0" width="${sw+0.02}" height="${W}" style="${i%2?fillB:fillA}"/>`;
-  g+=`<g fill="none" style="stroke:var(--chalk)" stroke-width="${lw}">`;
+  g+=`<g class="lines" fill="none" style="stroke:var(--chalk)" stroke-width="${Math.max(1,lwPx)}">`;
   g+=`<rect x="0" y="0" width="${L}" height="${W}"/><line x1="${L/2}" y1="0" x2="${L/2}" y2="${W}"/><circle cx="${L/2}" cy="${cy}" r="${f.circle}"/>`;
   for(const side of [0,1]){
     if(court){
@@ -415,7 +428,7 @@ function renderPitch(){
     <marker id="mRun" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#fff"/></marker>
     <marker id="mPass" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${PASS}"/></marker>
   </defs>
-  <g transform="${vertical?`translate(0 ${L}) rotate(-90)`:''}">${g}</g>
+  <g transform="${vertical?`translate(0 ${L*ax}) rotate(-90) scale(${ax} ${ay})`:`scale(${ax} ${ay})`}">${g}</g>
   <g id="L1"></g><g id="L2"></g><g id="L3"></g><g id="L4"></g>`;
   L1=svg.querySelector('#L1'); L2=svg.querySelector('#L2'); L3=svg.querySelector('#L3'); L4=svg.querySelector('#L4');
 }
