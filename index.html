@@ -163,9 +163,11 @@ body.fs .stage{border-radius:6px}
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="squadTitle">
     <h2 id="squadTitle">Inställningar</h2>
     <h3>Spelform</h3>
-    <div class="seg" role="group" aria-label="Spelform">
-      <button class="btn" data-fmt="9">9 mot 9</button>
-      <button class="btn" data-fmt="11">11 mot 11</button>
+    <div class="seg" role="group" aria-label="Spelform" style="flex-wrap:wrap">
+      <button class="btn" data-fmt="5">5-manna</button>
+      <button class="btn" data-fmt="7">7-manna</button>
+      <button class="btn" data-fmt="9">9-manna</button>
+      <button class="btn" data-fmt="11">11-manna</button>
       <button class="btn" id="futsalBtn">Futsal</button>
     </div>
     <div class="seg" id="futsalModes" role="group" aria-label="Futsal-läge" style="margin-top:8px" hidden>
@@ -183,6 +185,18 @@ body.fs .stage{border-radius:6px}
 <script>
 (function(){
 const FORMATS = {
+  '5': { L:30, W:20, pa:[6,12], circle:4, goal:3, corner:.5, spRef:40, kickIn:true,
+    formations:{
+      '1-2-1':[[.04,.5],[.2,.5],[.32,.15],[.32,.85],[.45,.5]],
+      '2-2':[[.04,.5],[.2,.25],[.2,.75],[.4,.25],[.4,.75]],
+      '2-1-1':[[.04,.5],[.2,.3],[.2,.7],[.32,.5],[.45,.5]]
+    }},
+  '7': { L:50, W:35, pa:[9,20], spot:7, circle:5, goal:5, spRef:50,
+    formations:{
+      '2-3-1':[[.04,.5],[.2,.3],[.2,.7],[.33,.15],[.31,.5],[.33,.85],[.45,.5]],
+      '3-2-1':[[.04,.5],[.2,.2],[.18,.5],[.2,.8],[.33,.35],[.33,.65],[.45,.5]],
+      '3-1-2':[[.04,.5],[.2,.2],[.18,.5],[.2,.8],[.3,.5],[.43,.32],[.43,.68]]
+    }},
   '9': { L:64, W:50, pa:[13,30], ga:[4,12], spot:9, circle:7, goal:5,
     formations:{
       '3-3-2':[[.035,.5],[.2,.2],[.17,.5],[.2,.8],[.33,.18],[.31,.5],[.33,.82],[.45,.36],[.45,.64]],
@@ -205,8 +219,8 @@ const FORMATS = {
       '4-0':[[.04,.5],[.25,.1],[.28,.37],[.28,.63],[.25,.9]]
     }}
 };
-const FMT_LABEL={'9':'9 mot 9','11':'11 mot 11','futsal':'Futsal 5 mot 5','futsal4':'Futsal 4 mot 4','futsal3':'Futsal 3 mot 3'};
-const FMT_TOAST={'9':'9 mot 9: mindre plan och 9 spelare per lag.','11':'11 mot 11: fullstor plan och 11 spelare per lag.',
+const FMT_LABEL={'5':'5-manna','7':'7-manna','9':'9-manna','11':'11-manna','futsal':'Futsal 5 mot 5','futsal4':'Futsal 4 mot 4','futsal3':'Futsal 3 mot 3'};
+const FMT_TOAST={'5':'5-manna: plan cirka 30 × 20 m och 5 spelare per lag.','7':'7-manna: plan cirka 50 × 35 m och 7 spelare per lag.','9':'9 mot 9: mindre plan och 9 spelare per lag.','11':'11 mot 11: fullstor plan och 11 spelare per lag.',
   'futsal':'Futsal 5 mot 5: fyra utespelare och målvakt per lag.','futsal4':'Futsal 4 mot 4: tre utespelare och målvakt per lag.',
   'futsal3':'Futsal 3 mot 3: två utespelare och målvakt per lag.'};
 { const base=FORMATS.futsal, court={L:base.L,W:base.W,futsal:true,spot:base.spot,spot2:base.spot2,circle:base.circle,goal:base.goal,corner:base.corner};
@@ -233,7 +247,7 @@ const SET_PIECES={
   throwR:{label:'Inkast höger',build:throwBuild},
   throwL:{label:'Inkast vänster',build:throwBuild,mirror:true}
 };
-function spH(f){ const s=f.W/(f.futsal?40:68); return {s, r:f.W*0.034, g:(dx,dy)=>({x:f.L-dx*s,y:f.W/2+dy*s}), fr:(fx,dy)=>({x:fx*f.L,y:f.W/2+dy*s})}; }
+function spH(f){ const s=f.W/(f.spRef||(f.futsal?40:68)); return {s, r:f.W*0.034, g:(dx,dy)=>({x:f.L-dx*s,y:f.W/2+dy*s}), fr:(fx,dy)=>({x:fx*f.L,y:f.W/2+dy*s})}; }
 function cornerBuild(f){
   const {g,fr,r}=spH(f);
   return {
@@ -410,10 +424,10 @@ function renderPitch(){
       g+=`<rect x="${side?L:-1}" y="${cy-f.goal/2}" width="1" height="${f.goal}" fill="rgba(255,255,255,.18)"/>`;
       continue;
     }
-    const [pd,pw]=f.pa, [gd,gw]=f.ga;
+    const [pd,pw]=f.pa;
     g+=`<rect x="${side?L-pd:0}" y="${cy-pw/2}" width="${pd}" height="${pw}"/>`;
-    g+=`<rect x="${side?L-gd:0}" y="${cy-gw/2}" width="${gd}" height="${gw}"/>`;
-    const dx=pd-f.spot;
+    if(f.ga){ const [gd,gw]=f.ga; g+=`<rect x="${side?L-gd:0}" y="${cy-gw/2}" width="${gd}" height="${gw}"/>`; }
+    const dx=f.spot?pd-f.spot:99;
     if(dx<f.circle){ const h=Math.sqrt(f.circle*f.circle-dx*dx), x=side?L-pd:pd;
       g+=`<path d="M${x} ${cy-h} A${f.circle} ${f.circle} 0 0 ${side?0:1} ${x} ${cy+h}"/>`; }
     g+=`<rect x="${side?L:-1.5}" y="${cy-f.goal/2}" width="1.5" height="${f.goal}" fill="rgba(255,255,255,.18)"/>`;
@@ -422,7 +436,7 @@ function renderPitch(){
   for(const [cx,cyy,sx,sy] of [[0,0,1,1],[L,0,-1,1],[0,W,1,-1],[L,W,-1,-1]])
     g+=`<path d="M${cx} ${cyy+sy*cr} A${cr} ${cr} 0 0 ${sx*sy>0?0:1} ${cx+sx*cr} ${cyy}"/>`;
   g+=`</g><g style="fill:var(--chalk)">`;
-  for(const x of [L/2,f.spot,L-f.spot].concat(f.spot2?[f.spot2,L-f.spot2]:[])) g+=`<circle cx="${x}" cy="${cy}" r="${lw*1.7}"/>`;
+  for(const x of [L/2].concat(f.spot?[f.spot,L-f.spot]:[],f.spot2?[f.spot2,L-f.spot2]:[])) g+=`<circle cx="${x}" cy="${cy}" r="${lw*1.7}"/>`;
   g+=`</g>`;
   svg.innerHTML=`<defs>
     <marker id="mRun" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#fff"/></marker>
@@ -769,7 +783,7 @@ $('#formation').onchange=e=>{
   save(); renderAll();
 };
 const spMenu=$('#spMenu'), spBtn=$('#spBtn');
-function spLabel(v){ return F().futsal?v.label.replace('Inkast','Inspark'):v.label; }
+function spLabel(v){ return (F().futsal||F().kickIn)?v.label.replace('Inkast','Inspark'):v.label; }
 function buildSpMenu(){ spMenu.innerHTML=Object.entries(SET_PIECES).map(([k,v])=>`<button role="menuitem" data-sp="${k}">${spLabel(v)}</button>`).join(''); }
 buildSpMenu();
 function closeMenu(){ spMenu.hidden=true; spBtn.setAttribute('aria-expanded','false'); }
